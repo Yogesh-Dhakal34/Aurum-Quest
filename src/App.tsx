@@ -6,9 +6,12 @@ import QuestsPage from './pages/QuestsPage'
 import RealmPage from './pages/RealmPage'
 import SettingsPage from './pages/SettingsPage'
 import type { View } from './types/view'
+import { AnimatePresence } from 'motion/react'
+import OpeningExperience from './components/OpeningExperience'
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('quests')
+  const [showOpening, setShowOpening] = useState(true)
 
   const renderPage = () => {
     switch (currentView) {
@@ -31,13 +34,23 @@ function App() {
   }
 
   return (
+  <>
     <AppShell
       currentView={currentView}
       onNavigate={setCurrentView}
     >
       {renderPage()}
     </AppShell>
-  )
+
+    <AnimatePresence>
+      {showOpening && (
+        <OpeningExperience
+          onComplete={() => setShowOpening(false)}
+        />
+      )}
+    </AnimatePresence>
+  </>
+)
 }
 
 export default App
