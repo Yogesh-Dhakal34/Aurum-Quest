@@ -60,9 +60,30 @@ function QuestsPage() {
           Complete your quests and earn XP.
         </p>
 
-        <p className="mt-4 text-sm text-slate-400">
-          Daily Progress: {completedQuests} / {quests.length}
-        </p>
+        <div className="mt-6 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium">
+              Daily Progress
+            </span>
+
+            <span className="text-sm text-slate-400">
+              {completedQuests} / {quests.length}
+            </span>
+          </div>
+
+          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+            <div
+              className="h-full rounded-full bg-cyan-400 transition-all duration-300"
+              style={{
+                width: `${(completedQuests / quests.length) * 100}%`,
+              }}
+            />
+          </div>
+
+          <p className="mt-2 text-xs text-slate-500">
+            Complete today's quests to advance your progress.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
