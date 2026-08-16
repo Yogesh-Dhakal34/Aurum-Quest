@@ -2,10 +2,11 @@ import type { Quest } from '../types/quest'
 
 type QuestCardProps = {
   quest: Quest
+  onComplete: (questId: string) => void
+
 }
 
-function QuestCard({ quest }: QuestCardProps) {
-  const progressPercentage = (quest.progress / quest.target) * 100
+function QuestCard({ quest, onComplete }: QuestCardProps) {  const progressPercentage = (quest.progress / quest.target) * 100
 
   return (
     <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -50,9 +51,11 @@ function QuestCard({ quest }: QuestCardProps) {
 
       <button
         type="button"
-        className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950"
+        disabled={quest.progress >= quest.target}
+        onClick={() => onComplete(quest.id)}
+        className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Complete Quest
+        {quest.progress >= quest.target ? 'Completed' : 'Complete Quest'}
       </button>
     </article>
   )
