@@ -1,8 +1,11 @@
+import AppShell from './layouts/AppShell'
+import QuestsPage from './pages/QuestsPage'
+
 function App() {
   return (
-    <main>
-      <h1>Aurum Quest</h1>
-    </main>
+    <AppShell>
+      <QuestsPage />
+    </AppShell>
   )
 }
 
