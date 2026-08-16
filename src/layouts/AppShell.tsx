@@ -1,8 +1,25 @@
+import type { ReactNode } from 'react'
+import type { View } from '../types/view'
+
 type AppShellProps = {
-  children: React.ReactNode
+  children: ReactNode
+  currentView: View
+  onNavigate: (view: View) => void
 }
 
-function AppShell({ children }: AppShellProps) {
+const navigationItems: { label: string; view: View }[] = [
+  { label: 'Quests', view: 'quests' },
+  { label: 'Legend', view: 'legend' },
+  { label: 'Progress', view: 'progress' },
+  { label: 'Realm', view: 'realm' },
+  { label: 'Settings', view: 'settings' },
+]
+
+function AppShell({
+  children,
+  currentView,
+  onNavigate,
+}: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800 px-6 py-4">
@@ -12,11 +29,20 @@ function AppShell({ children }: AppShellProps) {
       <div className="flex min-h-[calc(100vh-73px)]">
         <aside className="hidden w-56 border-r border-slate-800 p-4 md:block">
           <nav className="space-y-2">
-            <p>Quests</p>
-            <p>Legend</p>
-            <p>Progress</p>
-            <p>Realm</p>
-            <p>Settings</p>
+            {navigationItems.map((item) => (
+              <button
+                key={item.view}
+                type="button"
+                onClick={() => onNavigate(item.view)}
+                className={`block w-full rounded-lg px-3 py-2 text-left transition ${
+                  currentView === item.view
+                    ? 'bg-slate-800 text-cyan-400'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
         </aside>
 
