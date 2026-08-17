@@ -16,6 +16,28 @@ function QuestsPage() {
     (quest) => quest.progress >= quest.target,
   ).length
 
+  const todaysXp = quests
+    .filter((quest) => quest.progress >= quest.target)
+    .reduce((total, quest) => total + quest.xpReward, 0)
+
+  const completionPercentage =
+    quests.length === 0
+      ? 0
+      : Math.round((completedQuests / quests.length) * 100)
+
+  const groupedQuests = quests.reduce<Record<string, Quest[]>>(
+  (groups, quest) => {
+    if (!groups[quest.category]) {
+      groups[quest.category] = []
+    }
+
+    groups[quest.category].push(quest)
+
+    return groups
+  },
+  {},
+)
+
   const handleCompleteQuest = (questId: string) => {
     setQuests((currentQuests) =>
       currentQuests.map((quest) => {
@@ -61,30 +83,52 @@ function QuestsPage() {
         </p>
 
         <div className="mt-6 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium">
-              Daily Progress
-            </span>
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Today's XP
+      </p>
 
-            <span className="text-sm text-slate-400">
-              {completedQuests} / {quests.length}
-            </span>
-          </div>
+      <p className="mt-1 text-2xl font-bold text-cyan-400">
+        {todaysXp} XP
+      </p>
+    </div>
 
-          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-            <div
-              className="h-full rounded-full bg-cyan-400 transition-all duration-300"
-              style={{
-                width: `${(completedQuests / quests.length) * 100}%`,
-              }}
-            />
-          </div>
+    <div>
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Quests
+      </p>
 
-          <p className="mt-2 text-xs text-slate-500">
-            Complete today's quests to advance your progress.
-          </p>
-        </div>
-      </div>
+      <p className="mt-1 text-2xl font-bold">
+        {completedQuests} / {quests.length}
+      </p>
+    </div>
+  </div>
+
+  <div className="mt-5 flex items-center justify-between">
+    <span className="text-sm font-medium">
+      Daily Progress
+    </span>
+
+    <span className="text-sm text-slate-400">
+      {completionPercentage}%
+    </span>
+  </div>
+
+  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+    <div
+      className="h-full rounded-full bg-cyan-400 transition-all duration-300"
+      style={{
+        width: `${completionPercentage}%`,
+      }}
+    />
+  </div>
+
+  <p className="mt-2 text-xs text-slate-500">
+    Complete today's quests to advance your progress.
+  </p>
+</div>
+</div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
     <div className="relative">
@@ -104,8 +148,15 @@ function QuestsPage() {
         </AnimatePresence>
     </div>
 
+        <div className="space-y-8">
+  {Object.entries(groupedQuests).map(([category, categoryQuests]) => (
+    <section key={category}>
+      <h3 className="mb-3 text-lg font-semibold text-cyan-400">
+        {category}
+      </h3>
+
         <div className="space-y-4">
-          {quests.map((quest) => (
+          {categoryQuests.map((quest) => (
             <QuestCard
               key={quest.id}
               quest={quest}
@@ -113,6 +164,9 @@ function QuestsPage() {
             />
           ))}
         </div>
+      </section>
+    ))}
+  </div>
       </div>
     </section>
   )

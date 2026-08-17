@@ -22,8 +22,27 @@ function AppShell({
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800 px-6 py-4">
-        <h1 className="text-xl font-bold">Aurum Quest</h1>
+      <header className="border-b border-slate-800">
+        <div className="px-6 py-4">
+            <h1 className="text-xl font-bold">Aurum Quest</h1>
+          </div>
+
+          <nav className="flex gap-1 overflow-x-auto border-t border-slate-800 px-4 py-2 md:hidden">
+            {navigationItems.map((item) => (
+              <button
+                key={item.view}
+                type="button"
+                onClick={() => onNavigate(item.view)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-sm transition ${
+                  currentView === item.view
+                    ? 'bg-slate-800 text-cyan-400'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
       </header>
 
       <div className="flex min-h-[calc(100vh-73px)]">

@@ -1,6 +1,7 @@
 import type { Player } from '../types/player'
 
 export const player: Player = {
+  id: 'player-01',
   name: 'Adventurer',
   title: 'Quest Initiate',
   level: 1,
