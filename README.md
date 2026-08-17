@@ -1,125 +1,187 @@
+<div align="center">
+
 # ⚔️ AURUM QUEST
 
 ### ✦ Turn your real-life goals into quests. Earn XP. Build your legend.
 
-Aurum Quest is a **gamified personal productivity application** built around quests, XP, progression, and personal growth.
+Aurum Quest is a **gamified personal productivity application** built around
+quests, XP, progression, and personal growth.
 
-The project is being developed progressively — starting with a simple working quest loop and expanding toward **persistence, richer progression systems, and eventually a more immersive personal world.**
+The project is being developed progressively — starting with a simple
+working quest loop and expanding toward **persistence, richer progression
+systems, and eventually a more immersive personal world.**
+
+[![Version](https://img.shields.io/badge/version-v0.1.0-8A2BE2?style=for-the-badge)](#-versioning)
+[![Phase](https://img.shields.io/badge/phase-1%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+[![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
+
+</div>
+
+<br>
 
 ---
 
 ## 🌟 Current Status
 
-**Version:** `v0.1.0`
-**Phase:** `Phase 1 — Opening Experience + App Shell + First Dashboard`
+| | |
+|---|---|
+| **Version** | `v0.1.0` |
+| **Phase** | Phase 1 — Opening Experience + App Shell + First Dashboard |
 
 Aurum Quest currently provides a functional local quest loop:
 
 ```text
-                    ⚔️ AURUM QUEST
+                    ⚔️  AURUM QUEST
 
                          OPEN
                            │
                            ▼
-                  🧙 PLAYER IDENTITY
+                  🧙  PLAYER IDENTITY
                            │
                            ▼
-                    📜 TODAY'S QUESTS
+                    📜  TODAY'S QUESTS
                            │
                            ▼
-                    ⚔️ COMPLETE QUEST
+                    ⚔️  COMPLETE QUEST
                            │
                            ▼
-                       ✦ EARN XP
+                       ✦  EARN XP
                            │
                            ▼
-                   📈 TRACK PROGRESS
+                   📈  TRACK PROGRESS
+```
 
-                   Phase 1 focuses on proving this core loop before introducing persistence and more advanced progression systems.
+> Phase 1 focuses on proving this core loop before introducing persistence
+> and more advanced progression systems.
 
-✨ What You Can Do
+<br>
 
-🧙 Build Your Legend
-View your player identity
-See your current level
-Track XP progression
-Maintain a daily streak
-Display your player title
+---
 
+## ✨ What You Can Do
 
-⚔️ Complete Quests
+<table>
+<tr>
+<td width="33%" valign="top">
 
-View today's quests
-Organize quests by category
-See quest difficulty
-View XP rewards
-Complete available quests
-Receive animated XP feedback
+### 🧙 Build Your Legend
 
+- View your player identity
+- See your current level
+- Track XP progression
+- Maintain a daily streak
+- Display your player title
 
-📈 Track Your Progress
+</td>
+<td width="33%" valign="top">
 
-View today's earned XP
-Track completed quests
-See total daily quests
-Monitor completion percentage
-Watch your daily progress update in real time
+### ⚔️ Complete Quests
 
+- View today's quests
+- Organize quests by category
+- See quest difficulty
+- View XP rewards
+- Complete available quests
+- Receive animated XP feedback
 
-🖥️ Responsive Experience
+</td>
+<td width="33%" valign="top">
+
+### 📈 Track Your Progress
+
+- View today's earned XP
+- Track completed quests
+- See total daily quests
+- Monitor completion percentage
+- Watch progress update in real time
+
+</td>
+</tr>
+</table>
+
+<br>
+
+---
+
+## 🖥️ Responsive Experience
 
 Aurum Quest adapts to different screen sizes.
 
-Desktop
+<table>
+<tr>
+<td width="60%" valign="top">
 
+**Desktop**
+
+```text
 ┌─────────────────────────────────────────────────────────┐
-│ ⚔️ Aurum Quest                                          │
+│ ⚔️ Aurum Quest                                           │
 ├────────────────┬────────────────────────────────────────┤
-│                │                                        │
-│  📜 Quests    │       ⚔️ Today's Quests                │
-│                │                                        │
-│  🧙 Legend    │       🧙 Player                        │
-│                │                                        │
-│  📈 Progress   │       📜 Quest List                    │
-│                │                                        │
-│  🌎 Realm      │       ✦ XP & Progress                  │
-│                │                                        │
-│  ⚙️ Settings  │                                        │
-│                │                                        │
+│                │                                         │
+│  📜 Quests     │       ⚔️ Today's Quests                │
+│                │                                         │
+│  🧙 Legend     │       🧙 Player                        │
+│                │                                         │
+│  📈 Progress   │       📜 Quest List                     │
+│                │                                         │
+│  🌎 Realm      │       ✦  XP & Progress                 │
+│                │                                         │
+│  ⚙️ Settings   │                                         │
+│                │                                         │
 └────────────────┴────────────────────────────────────────┘
+```
 
-Mobile
+</td>
+<td width="40%" valign="top">
 
-┌──────────────────────────────┐
-│ ⚔️ Aurum Quest               │
-├──────────────────────────────┤
-│ 📜 Quests  🧙 Legend  📈 ... │
-├──────────────────────────────┤
-│                              │
-│       Today's Quests         │
-│                              │
-│       🧙 Player Card         │
-│                              │
-│       ⚔️ Quest Cards         │
-│                              │
-│       📈 Daily Progress      │
-│                              │
-└──────────────────────────────┘
+**Mobile**
 
+```text
+┌──────────────────────────┐
+│ ⚔️ Aurum Quest            │
+├──────────────────────────┤
+│ 📜 Quests  🧙 Legend  📈  │
+├──────────────────────────┤
+│                          │
+│     Today's Quests       │
+│                          │
+│     🧙 Player Card       │
+│                          │
+│     ⚔️ Quest Cards        │
+│                          │
+│     📈 Daily Progress    │
+│                          │
+└──────────────────────────┘
+```
 
-🧩 Tech Stack
+</td>
+</tr>
+</table>
 
-Technology	Purpose
-⚛️ React	User interface
-🔷 TypeScript	Type-safe development
-⚡ Vite	Development and production build
-🎨 Tailwind CSS	Styling and responsive layouts
-✨ Motion for React	UI animations
-🌿 Git	Version control
-🐙 GitHub	Repository and project history
+<br>
 
+---
 
-🏗️ Project Structure
+## 🧩 Tech Stack
+
+| Technology | Purpose |
+|---|---|
+| ⚛️ **React** | User interface |
+| 🔷 **TypeScript** | Type-safe development |
+| ⚡ **Vite** | Development and production build |
+| 🎨 **Tailwind CSS** | Styling and responsive layouts |
+| ✨ **Motion for React** | UI animations |
+| 🌿 **Git** | Version control |
+| 🐙 **GitHub** | Repository and project history |
+
+<br>
+
+---
+
+## 🏗️ Project Structure
+
+```text
 aurum-quest/
 │
 ├── 📁 public/
@@ -154,114 +216,167 @@ aurum-quest/
 ├── 📄 package.json
 ├── 📄 tsconfig.json
 └── 📄 vite.config.ts
+```
 
+<br>
 
-🚀 Running Locally
+---
 
-1. Clone the repository
+## 🚀 Running Locally
+
+**1. Clone the repository**
+
+```bash
 git clone https://github.com/Yogesh-Dhakal34/Aurum-Quest.git
+```
 
-2. Enter the project
+**2. Enter the project**
+
+```bash
 cd Aurum-Quest
+```
 
-3. Install dependencies
+**3. Install dependencies**
+
+```bash
 npm install
+```
 
-4. Start the development server
+**4. Start the development server**
+
+```bash
 npm run dev
+```
 
-Vite will provide the local development URL in the terminal.
+> Vite will provide the local development URL in the terminal.
 
-5. Create a production build
+**5. Create a production build**
+
+```bash
 npm run build
-🧪 Phase 1 Validation
+```
+
+<br>
+
+---
+
+## 🧪 Phase 1 Validation
 
 Phase 1 has been tested across both desktop and mobile layouts.
 
-🖥️ Desktop
- Opening experience
- Sidebar navigation
- Quest grouping
- Quest completion
- XP feedback
- Daily XP tracking
- Daily progress percentage
- Responsive layout
+<table>
+<tr>
+<td width="50%" valign="top">
 
-📱 Mobile
- Mobile navigation
- Quest grouping
- Quest completion
- XP feedback
- Daily XP tracking
- Daily progress
- Responsive layout
- No horizontal layout issues observed
-🔨 Production Build
+**🖥️ Desktop**
+
+- [x] Opening experience
+- [x] Sidebar navigation
+- [x] Quest grouping
+- [x] Quest completion
+- [x] XP feedback
+- [x] Daily XP tracking
+- [x] Daily progress percentage
+- [x] Responsive layout
+
+</td>
+<td width="50%" valign="top">
+
+**📱 Mobile**
+
+- [x] Mobile navigation
+- [x] Quest grouping
+- [x] Quest completion
+- [x] XP feedback
+- [x] Daily XP tracking
+- [x] Daily progress
+- [x] Responsive layout
+- [x] No horizontal layout issues observed
+
+</td>
+</tr>
+</table>
+
+### 🔨 Production Build
+
+```bash
 npm run build
+```
 
+- [x] TypeScript compilation
+- [x] Vite production build
+- [x] Production bundle generated
 
-✓ TypeScript compilation
-✓ Vite production build
-✓ Production bundle generated
+<br>
 
+---
 
-🗺️ Development Roadmap
+## 🗺️ Development Roadmap
 
 Aurum Quest is being built phase by phase.
 
-The goal is not to build the entire vision at once, but to establish a reliable foundation before increasing complexity.
+> The goal is not to build the entire vision at once, but to establish a
+> reliable foundation before increasing complexity.
 
-✅ Phase 0 — Environment & Initialization
+### ✅ Phase 0 — Environment & Initialization
 
-Status: Complete
+**Status:** Complete
 
-React + TypeScript + Vite project
-Development environment
-Initial project structure
-Dependency setup
-Git initialization
-GitHub repository
-Initial documentation
-✅ Phase 1 — Opening Experience + App Shell + First Dashboard
+- [x] React + TypeScript + Vite project
+- [x] Development environment
+- [x] Initial project structure
+- [x] Dependency setup
+- [x] Git initialization
+- [x] GitHub repository
+- [x] Initial documentation
 
-Status: Complete
-Release: v0.1.0
+### ✅ Phase 1 — Opening Experience + App Shell + First Dashboard
 
-Delivered
-⚔️ Branded opening experience
-🧭 Application navigation
-🖥️ Responsive application shell
-🧙 Player identity card
-📊 Level and XP display
-🔥 Streak display
-📜 Today's quest list
-🏷️ Quest categories
-⚔️ Quest difficulty
-✦ Quest XP rewards
-✅ Quest completion
-✨ Animated XP feedback
-📈 Daily progress tracking
-📱 Desktop and mobile testing
-🔜 Phase 2 — Progression & Persistence
+**Status:** Complete · **Release:** `v0.1.0`
 
-Status: Planned
+**Delivered**
 
-The next phase will begin moving Aurum Quest beyond a temporary local experience.
+- [x] ⚔️ Branded opening experience
+- [x] 🧭 Application navigation
+- [x] 🖥️ Responsive application shell
+- [x] 🧙 Player identity card
+- [x] 📊 Level and XP display
+- [x] 🔥 Streak display
+- [x] 📜 Today's quest list
+- [x] 🏷️ Quest categories
+- [x] ⚔️ Quest difficulty
+- [x] ✦ Quest XP rewards
+- [x] ✅ Quest completion
+- [x] ✨ Animated XP feedback
+- [x] 📈 Daily progress tracking
+- [x] 📱 Desktop and mobile testing
+
+### 🔜 Phase 2 — Progression & Persistence
+
+**Status:** Planned
+
+The next phase will begin moving Aurum Quest beyond a temporary local
+experience.
 
 Potential areas include:
 
-💾 Persistent player state
-📈 More complete progression logic
-✦ Expanded XP systems
-🏆 More detailed progress views
-⚔️ Expanded quest interactions
-🗃️ More structured application data
-🔮 Future Direction
+- 💾 Persistent player state
+- 📈 More complete progression logic
+- ✦ Expanded XP systems
+- 🏆 More detailed progress views
+- ⚔️ Expanded quest interactions
+- 🗃️ More structured application data
+
+<br>
+
+---
+
+## 🔮 Future Direction
 
 As Aurum Quest develops, the system may expand toward:
 
-                    ⚔️ AURUM QUEST
+```text
+                    ⚔️  AURUM QUEST
                            │
              ┌─────────────┼─────────────┐
              ▼             ▼             ▼
@@ -276,26 +391,35 @@ As Aurum Quest develops, the system may expand toward:
                            │
                            ▼
                   ✨ IMMERSIVE WORLD
+```
 
 Longer-term development may explore:
 
-🏆 Achievements
-🔥 Streak systems
-📊 Advanced statistics
-🌎 Realm/world systems
-💾 Persistent data
-🎯 More advanced quest structures
-🧩 Personalization
-✨ A more immersive productivity experience
+- 🏆 Achievements
+- 🔥 Streak systems
+- 📊 Advanced statistics
+- 🌎 Realm/world systems
+- 💾 Persistent data
+- 🎯 More advanced quest structures
+- 🧩 Personalization
+- ✨ A more immersive productivity experience
 
-The roadmap is intentionally flexible and will evolve as the application is tested and developed.
+> The roadmap is intentionally flexible and will evolve as the application
+> is tested and developed.
 
-🧠 Development Philosophy
+<br>
+
+---
+
+## 🧠 Development Philosophy
 
 Aurum Quest is intentionally being built incrementally.
 
-Rather than attempting to create the entire vision immediately, each phase aims to establish a small, functional foundation that can be tested before additional complexity is introduced.
+Rather than attempting to create the entire vision immediately, each phase
+aims to establish a small, functional foundation that can be tested before
+additional complexity is introduced.
 
+```text
        BUILD
          │
          ▼
@@ -314,63 +438,57 @@ Rather than attempting to create the entire vision immediately, each phase aims 
       EXPAND
          │
          └───────────────↺
+```
 
 This approach keeps the project:
 
-🧩 Understandable
-🧪 Testable
-🛠️ Maintainable
-📈 Incrementally scalable
-📌 Versioning
-Current Release
+🧩 Understandable · 🧪 Testable · 🛠️ Maintainable · 📈 Incrementally scalable
 
-v0.1.0 — Phase 1
+<br>
 
-The v0.1.0 tag represents the completed Phase 1 baseline.
+---
 
-Development continues from the main branch.
+## 📌 Versioning
 
-📖 Development Journal
+**Current Release: `v0.1.0` — Phase 1**
 
-Important development decisions, implementation notes, testing results, and milestones are recorded in:
+The `v0.1.0` tag represents the completed Phase 1 baseline. Development
+continues from the `main` branch.
 
-DEV_JOURNAL.md
+<br>
 
-The development journal provides a chronological record of how Aurum Quest is being built.
+---
 
-👤 Project
-⚔️ Aurum Quest
+## 📖 Development Journal
+
+Important development decisions, implementation notes, testing results,
+and milestones are recorded in **[`DEV_JOURNAL.md`](DEV_JOURNAL.md)**.
+
+The development journal provides a chronological record of how Aurum Quest
+is being built.
+
+<br>
+
+---
+
+## 👤 Project
+
+<div align="center">
+
+### ⚔️ Aurum Quest
 
 A personal productivity RPG built with React and TypeScript.
 
-Developed by Yogesh Dhakal
+**Developed by [Yogesh Dhakal](https://github.com/Yogesh-Dhakal34)**
 
-<div align="center">
-✦ Your goals are the quests.
-✦ Your actions are the XP.
-✦ Your progress builds the legend.
+<br>
 
-⚔️ Aurum Quest — v0.1.0
+✦ *Your goals are the quests.* <br>
+✦ *Your actions are the XP.* <br>
+✦ *Your progress builds the legend.*
 
-</div> ```
-Why I prefer this version
+<br>
 
-It has a much stronger hierarchy when someone opens the GitHub repository:
+**⚔️ Aurum Quest — v0.1.0**
 
-AURUM QUEST
-↓
-What is it?
-↓
-What exists right now?
-↓
-What can I do?
-↓
-How does it look?
-↓
-How is it built?
-↓
-How do I run it?
-↓
-What has been completed?
-↓
-Where is it going?
+</div>
