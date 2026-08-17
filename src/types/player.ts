@@ -6,5 +6,7 @@ export type Player = {
   currentXp: number
   xpToNextLevel: number
   streak: number
+  comboCount: number
+  lastComboAt: string | null
   avatarUrl?: string
 }

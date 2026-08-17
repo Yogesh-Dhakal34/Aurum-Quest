@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { getGmtDateKey } from '../lib/date'
 import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
 import { usePersistentState } from '../hooks/usePersistentState'
@@ -7,6 +7,7 @@ import { player as initialPlayer } from '../data/player'
 import { todaysQuests as initialQuests } from '../data/quests'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
+import { useEffect, useState } from 'react'
 
 function isPlayer(value: unknown): value is Player {
   return (
@@ -14,7 +15,9 @@ function isPlayer(value: unknown): value is Player {
     value !== null &&
     'id' in value &&
     'currentXp' in value &&
-    'xpToNextLevel' in value
+    'xpToNextLevel' in value &&
+    'comboCount' in value &&
+    'lastComboAt' in value
   )
 }
 
@@ -44,7 +47,49 @@ function QuestsPage() {
     initialQuests,
     isQuestArray,
   )
+
+    const [dailyDate, setDailyDate] = usePersistentState<string>(
+      'dailyDate',
+    getGmtDateKey(),
+  )
+
+    useEffect(() => {
+    const today = getGmtDateKey()
+
+    if (dailyDate === today) {
+      return
+    }
+
+    setQuests(initialQuests)
+
+    setPlayer((currentPlayer) => ({
+      ...currentPlayer,
+      comboCount: 0,
+      lastComboAt: null,
+    }))
+
+    setDailyDate(today)
+  }, [dailyDate, setPlayer, setQuests, setDailyDate])
+
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
+
+    useEffect(() => {
+    const today = getGmtDateKey()
+
+    if (dailyDate === today) {
+      return
+    }
+
+    setQuests(initialQuests)
+
+    setPlayer((currentPlayer) => ({
+      ...currentPlayer,
+      comboCount: 0,
+      lastComboAt: null,
+    }))
+
+    setDailyDate(today)
+  }, [dailyDate, setPlayer, setQuests, setDailyDate])
 
   const completedQuests = quests.filter(
     (quest) => quest.progress >= quest.target,
@@ -92,11 +137,33 @@ function QuestsPage() {
       return
     }
 
-    setPlayer((currentPlayer) => ({
-      ...currentPlayer,
-      currentXp: currentPlayer.currentXp + quest.xpReward,
-    }))
-    setXpFeedback(quest.xpReward)
+    const now = new Date()
+    const today = now.toISOString().slice(0, 10)
+
+    const lastComboDate = player.lastComboAt
+      ? new Date(player.lastComboAt).toISOString().slice(0, 10)
+      : null
+
+    const nextCombo =
+      lastComboDate === today
+        ? Math.min(player.comboCount + 1, 3)
+        : 1
+
+    const comboMultiplier =
+      nextCombo === 1 ? 1 : nextCombo === 2 ? 1.1 : 1.2
+
+    const earnedXp = Math.round(
+      quest.xpReward * comboMultiplier,
+)
+
+setPlayer((currentPlayer) => ({
+  ...currentPlayer,
+  currentXp: currentPlayer.currentXp + earnedXp,
+  comboCount: nextCombo,
+  lastComboAt: now.toISOString(),
+}))
+
+    setXpFeedback(earnedXp)
 
     setTimeout(() => {
         setXpFeedback(null)
@@ -115,6 +182,16 @@ function QuestsPage() {
         <p className="mt-2 text-slate-400">
           Complete your quests and earn XP.
         </p>
+
+        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+          <span className="text-sm text-slate-400">
+            Quest Combo
+          </span>
+
+          <span className="font-bold text-cyan-400">
+            {player.comboCount}x
+          </span>
+        </div>
 
         <div className="mt-6 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
   <div className="grid grid-cols-2 gap-4">

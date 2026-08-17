@@ -8,4 +8,6 @@ export const player: Player = {
   currentXp: 120,
   xpToNextLevel: 500,
   streak: 3,
+  comboCount: 0,
+  lastComboAt: null,
 }
