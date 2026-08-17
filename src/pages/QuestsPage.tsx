@@ -2,14 +2,48 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
+import { usePersistentState } from '../hooks/usePersistentState'
 import { player as initialPlayer } from '../data/player'
 import { todaysQuests as initialQuests } from '../data/quests'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 
+function isPlayer(value: unknown): value is Player {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'currentXp' in value &&
+    'xpToNextLevel' in value
+  )
+}
+
+function isQuestArray(value: unknown): value is Quest[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'progress' in item &&
+        'target' in item &&
+        'xpReward' in item,
+    )
+  )
+}
+
 function QuestsPage() {
-  const [player, setPlayer] = useState<Player>(initialPlayer)
-  const [quests, setQuests] = useState<Quest[]>(initialQuests)
+  const [player, setPlayer] = usePersistentState<Player>(
+    'player',
+    initialPlayer,
+    isPlayer,
+  )
+  const [quests, setQuests] = usePersistentState<Quest[]>(
+    'quests',
+    initialQuests,
+    isQuestArray,
+  )
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
 
   const completedQuests = quests.filter(
