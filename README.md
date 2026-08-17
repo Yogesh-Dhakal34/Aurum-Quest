@@ -1,43 +1,29 @@
-# Aurum Quest
+# ✦ Aurum Quest
 
-Aurum Quest is a gamified personal productivity application built around quests, XP, progression, and personal growth.
+> **Turn your real-life goals into quests. Earn XP. Build your legend.**
 
-The project is being developed progressively, starting with a simple working quest loop and expanding toward persistence, richer progression systems, and eventually a more immersive personal world.
+Aurum Quest is a gamified personal productivity application built around **quests, XP, progression, and personal growth**.
 
-## Current Status
+The project is being developed progressively — starting with a simple, functional quest loop and expanding toward persistence, richer progression systems, and eventually a more immersive personal world.
 
-**Phase 1 — Opening Experience + App Shell + First Dashboard**
+---
 
-The current version includes:
+## ⚔️ Current Status
 
-- Branded opening experience
-- Responsive application shell
-- Navigation between application sections
-- Player identity card
-- Level, XP, and streak display
-- Today's quest list
-- Quest categories and difficulty
-- Quest XP rewards
-- Quest completion
-- Local XP updates
-- Animated XP feedback
-- Daily progress tracking
-- Static TypeScript data models
-- Desktop and mobile testing
+**Version:** `v0.1.0`
+**Phase:** Phase 1 — Opening Experience + App Shell + First Dashboard
 
-## Tech Stack
+Aurum Quest currently provides a functional local quest loop:
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Motion for React animations
-- Git / GitHub
-
-## Running Locally
-
-Clone the repository:
-
-```bash
-git clone https://github.com/Yogesh-Dhakal34/Aurum-Quest.git
-cd Aurum-Quest
+```text
+Open Aurum Quest
+       ↓
+See your player identity
+       ↓
+View today's quests
+       ↓
+Complete a quest
+       ↓
+Earn XP
+       ↓
+Track daily progress
