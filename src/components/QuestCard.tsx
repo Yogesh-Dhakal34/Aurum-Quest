@@ -33,7 +33,8 @@ function QuestCard({ quest, onComplete }: QuestCardProps) {  const progressPerce
       <div className="mt-5">
         <div className="mb-2 flex justify-between text-sm">
           <span>
-            Progress: {quest.progress} / {quest.target}
+            Progress: {quest.progress} / {quest.target}{' '}
+            {quest.unit !== 'completion' && quest.unit}
           </span>
 
           <span className="text-cyan-400">
@@ -55,7 +56,12 @@ function QuestCard({ quest, onComplete }: QuestCardProps) {  const progressPerce
         onClick={() => onComplete(quest.id)}
         className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {quest.progress >= quest.target ? 'Completed' : 'Complete Quest'}
+
+      {quest.progress >= quest.target
+        ? 'Completed'
+        : quest.unit === 'completion'
+          ? 'Complete Quest'
+          : 'Add Progress'}
       </button>
     </article>
   )

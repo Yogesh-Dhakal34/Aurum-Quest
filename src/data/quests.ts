@@ -3,14 +3,16 @@ import type { Quest } from '../types/quest'
 export const todaysQuests: Quest[] = [
   {
     id: 'study-01',
-    title: 'Complete BIT study session',
-    description: 'Focus on your current academic work.',
+    title: 'Complete BIT study sessions',
+    description: 'Complete focused study sessions for your current academic work.',
     category: 'Study',
     difficulty: 'Medium',
     xpReward: 100,
     progress: 0,
-    target: 1,
+    target: 3,
+    unit: 'sessions',
   },
+
   {
     id: 'health-01',
     title: 'Complete a physical activity session',
@@ -20,6 +22,7 @@ export const todaysQuests: Quest[] = [
     xpReward: 50,
     progress: 0,
     target: 1,
+    unit: 'completion',
   },
   {
     id: 'personal-01',
@@ -30,5 +33,6 @@ export const todaysQuests: Quest[] = [
     xpReward: 150,
     progress: 0,
     target: 1,
+    unit: 'completion',
   },
 ]

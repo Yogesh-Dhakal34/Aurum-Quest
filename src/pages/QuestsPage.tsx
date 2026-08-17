@@ -117,58 +117,61 @@ function QuestsPage() {
   {},
 )
 
-  const handleCompleteQuest = (questId: string) => {
-    setQuests((currentQuests) =>
-      currentQuests.map((quest) => {
-        if (quest.id !== questId || quest.progress >= quest.target) {
-          return quest
-        }
+const handleCompleteQuest = (questId: string) => {
+  const quest = quests.find((item) => item.id === questId)
 
-        return {
-          ...quest,
-          progress: quest.target,
-        }
-      }),
-    )
-
-    const quest = quests.find((item) => item.id === questId)
-
-    if (!quest || quest.progress >= quest.target) {
-      return
-    }
-
-    const now = new Date()
-    const today = now.toISOString().slice(0, 10)
-
-    const lastComboDate = player.lastComboAt
-      ? new Date(player.lastComboAt).toISOString().slice(0, 10)
-      : null
-
-    const nextCombo =
-      lastComboDate === today
-        ? Math.min(player.comboCount + 1, 3)
-        : 1
-
-    const comboMultiplier =
-      nextCombo === 1 ? 1 : nextCombo === 2 ? 1.1 : 1.2
-
-    const earnedXp = Math.round(
-      quest.xpReward * comboMultiplier,
-)
-
-setPlayer((currentPlayer) => ({
-  ...currentPlayer,
-  currentXp: currentPlayer.currentXp + earnedXp,
-  comboCount: nextCombo,
-  lastComboAt: now.toISOString(),
-}))
-
-    setXpFeedback(earnedXp)
-
-    setTimeout(() => {
-        setXpFeedback(null)
-    }, 1500)
+  if (!quest || quest.progress >= quest.target) {
+    return
   }
+
+  const nextProgress = Math.min(
+    quest.progress + 1,
+    quest.target,
+  )
+
+  const questCompleted = nextProgress >= quest.target
+
+  setQuests((currentQuests) =>
+    currentQuests.map((item) =>
+      item.id === questId
+        ? {
+            ...item,
+            progress: nextProgress,
+          }
+        : item,
+    ),
+  )
+
+  if (!questCompleted) {
+    return
+  }
+
+  const now = new Date()
+  const comboWindow = 24 * 60 * 60 * 1000
+
+  const currentCombo =
+    player.lastComboAt &&
+    now.getTime() - new Date(player.lastComboAt).getTime() <= comboWindow
+      ? player.comboCount
+      : 0
+
+  const nextCombo = currentCombo + 1
+  const comboMultiplier = 1 + (nextCombo - 1) * 0.1
+  const earnedXp = Math.round(quest.xpReward * comboMultiplier)
+
+  setPlayer((currentPlayer) => ({
+    ...currentPlayer,
+    currentXp: currentPlayer.currentXp + earnedXp,
+    comboCount: nextCombo,
+    lastComboAt: now.toISOString(),
+  }))
+
+  setXpFeedback(earnedXp)
+
+  setTimeout(() => {
+    setXpFeedback(null)
+  }, 1500)
+}
 
   return (
     <section className="mx-auto max-w-6xl">
