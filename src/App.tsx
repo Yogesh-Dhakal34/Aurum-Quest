@@ -5,11 +5,14 @@ import ProgressPage from './pages/ProgressPage'
 import QuestsPage from './pages/QuestsPage'
 import RealmPage from './pages/RealmPage'
 import SettingsPage from './pages/SettingsPage'
+import AuthPage from './pages/AuthPage'
 import type { View } from './types/view'
 import { AnimatePresence } from 'motion/react'
 import OpeningExperience from './components/OpeningExperience'
+import { AuthProvider } from './context/AuthContext'
+import { useAuth } from './hooks/useAuth'
 
-function App() {
+function AuthenticatedApp() {
   const [currentView, setCurrentView] = useState<View>('quests')
   const [showOpening, setShowOpening] = useState(true)
 
@@ -34,23 +37,49 @@ function App() {
   }
 
   return (
-  <>
-    <AppShell
-      currentView={currentView}
-      onNavigate={setCurrentView}
-    >
-      {renderPage()}
-    </AppShell>
+    <>
+      <AppShell
+        currentView={currentView}
+        onNavigate={setCurrentView}
+      >
+        {renderPage()}
+      </AppShell>
 
-    <AnimatePresence>
-      {showOpening && (
-        <OpeningExperience
-          onComplete={() => setShowOpening(false)}
-        />
-      )}
-    </AnimatePresence>
-  </>
-)
+      <AnimatePresence>
+        {showOpening && (
+          <OpeningExperience
+            onComplete={() => setShowOpening(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+function AuthGate() {
+  const { session, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+        Loading...
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <AuthPage />
+  }
+
+  return <AuthenticatedApp />
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  )
 }
 
 export default App
