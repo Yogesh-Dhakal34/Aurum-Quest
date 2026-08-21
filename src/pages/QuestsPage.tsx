@@ -1,95 +1,87 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { getGmtDateKey } from '../lib/date'
 import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
-import { usePersistentState } from '../hooks/usePersistentState'
-import { player as initialPlayer } from '../data/player'
-import { todaysQuests as initialQuests } from '../data/quests'
+import { useAuth } from '../hooks/useAuth'
+import { getPlayer, updatePlayerProgress } from '../services/playerService'
+import { advanceQuestProgress, getTodaysQuests } from '../services/questService'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 import { useEffect, useState } from 'react'
 
-function isPlayer(value: unknown): value is Player {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    'currentXp' in value &&
-    'xpToNextLevel' in value &&
-    'comboCount' in value &&
-    'lastComboAt' in value
-  )
-}
-
-function isQuestArray(value: unknown): value is Quest[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'progress' in item &&
-        'target' in item &&
-        'xpReward' in item,
-    )
-  )
-}
-
 function QuestsPage() {
-  const [player, setPlayer] = usePersistentState<Player>(
-    'player',
-    initialPlayer,
-    isPlayer,
-  )
-  const [quests, setQuests] = usePersistentState<Quest[]>(
-    'quests',
-    initialQuests,
-    isQuestArray,
-  )
+  const { user } = useAuth()
 
-    const [dailyDate, setDailyDate] = usePersistentState<string>(
-      'dailyDate',
-    getGmtDateKey(),
-  )
-
-    useEffect(() => {
-    const today = getGmtDateKey()
-
-    if (dailyDate === today) {
-      return
-    }
-
-    setQuests(initialQuests)
-
-    setPlayer((currentPlayer) => ({
-      ...currentPlayer,
-      comboCount: 0,
-      lastComboAt: null,
-    }))
-
-    setDailyDate(today)
-  }, [dailyDate, setPlayer, setQuests, setDailyDate])
-
+  const [player, setPlayer] = useState<Player | null>(null)
+  const [quests, setQuests] = useState<Quest[]>([])
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  // Bumped by the retry button to re-trigger the effect below without
+  // needing loadData itself to be called from an event handler — keeps
+  // data-fetching entirely inside the effect, per React's guidance that
+  // an effect's body should own its own async work rather than call out
+  // to a setState-calling function.
+  const [reloadToken, setReloadToken] = useState(0)
 
-    useEffect(() => {
-    const today = getGmtDateKey()
+  useEffect(() => {
+    if (!user) return
 
-    if (dailyDate === today) {
-      return
+    const currentUser = user
+    let cancelled = false
+
+    async function load() {
+      setIsLoading(true)
+      setLoadError(null)
+
+      try {
+        const [loadedPlayer, loadedQuests] = await Promise.all([
+          getPlayer(currentUser.id),
+          getTodaysQuests(currentUser.id),
+        ])
+
+        if (cancelled) return
+
+        // A null player here means the user has an auth account but no
+        // profiles/player_state row yet — expected before onboarding
+        // (Phase 3.4) exists. Surface it plainly rather than crash on
+        // `player.currentXp` below.
+        if (!loadedPlayer) {
+          setLoadError(
+            'No player profile found yet. Onboarding (Phase 3.4) will create this automatically once built.',
+          )
+          return
+        }
+
+        setPlayer(loadedPlayer)
+        setQuests(loadedQuests)
+      } catch (error) {
+        if (cancelled) return
+        setLoadError(
+          error instanceof Error ? error.message : 'Failed to load quest data.',
+        )
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
     }
 
-    setQuests(initialQuests)
+    load()
 
-    setPlayer((currentPlayer) => ({
-      ...currentPlayer,
-      comboCount: 0,
-      lastComboAt: null,
-    }))
+    return () => {
+      cancelled = true
+    }
+  }, [user, reloadToken])
 
-    setDailyDate(today)
-  }, [dailyDate, setPlayer, setQuests, setDailyDate])
+  const retryLoad = () => setReloadToken((token) => token + 1)
+
+  // Note on daily reset: unlike the previous localStorage version, no
+  // explicit "reset quests for a new day" step is needed here. Each
+  // quest_progress row is scoped to a specific date_key (see
+  // PHASE_3_DATABASE_ARCHITECTURE.md §3.4), so getTodaysQuests()
+  // naturally returns progress: 0 for a new day — there's nothing to
+  // reset, there's simply no row for today yet until a quest is advanced.
+  // Combo count, however, genuinely needs a same-day check before being
+  // reused — that logic lives in handleCompleteQuest below, matching the
+  // original comboWindow check exactly.
 
   const completedQuests = quests.filter(
     (quest) => quest.progress >= quest.target,
@@ -105,73 +97,123 @@ function QuestsPage() {
       : Math.round((completedQuests / quests.length) * 100)
 
   const groupedQuests = quests.reduce<Record<string, Quest[]>>(
-  (groups, quest) => {
-    if (!groups[quest.category]) {
-      groups[quest.category] = []
+    (groups, quest) => {
+      if (!groups[quest.category]) {
+        groups[quest.category] = []
+      }
+
+      groups[quest.category].push(quest)
+
+      return groups
+    },
+    {},
+  )
+
+  const handleCompleteQuest = async (questId: string) => {
+    if (!user || !player) return
+
+    const quest = quests.find((item) => item.id === questId)
+
+    if (!quest || quest.progress >= quest.target) {
+      return
     }
 
-    groups[quest.category].push(quest)
+    let result: { newProgress: number; justCompleted: boolean }
 
-    return groups
-  },
-  {},
-)
+    try {
+      result = await advanceQuestProgress(user.id, quest)
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to update quest.',
+      )
+      return
+    }
 
-const handleCompleteQuest = (questId: string) => {
-  const quest = quests.find((item) => item.id === questId)
+    setQuests((currentQuests) =>
+      currentQuests.map((item) =>
+        item.id === questId
+          ? { ...item, progress: result.newProgress }
+          : item,
+      ),
+    )
 
-  if (!quest || quest.progress >= quest.target) {
-    return
+    if (!result.justCompleted) {
+      return
+    }
+
+    // --- Combo/XP math below is unchanged from the previous
+    // localStorage-based version. Only where the result is persisted
+    // (updatePlayerProgress, a Supabase call, instead of setPlayer +
+    // usePersistentState) has changed. ---
+
+    const now = new Date()
+    const comboWindow = 24 * 60 * 60 * 1000
+
+    const currentCombo =
+      player.lastComboAt &&
+      now.getTime() - new Date(player.lastComboAt).getTime() <= comboWindow
+        ? player.comboCount
+        : 0
+
+    const nextCombo = currentCombo + 1
+    const comboMultiplier = 1 + (nextCombo - 1) * 0.1
+    const earnedXp = Math.round(quest.xpReward * comboMultiplier)
+
+    const updatedPlayer: Player = {
+      ...player,
+      currentXp: player.currentXp + earnedXp,
+      comboCount: nextCombo,
+      lastComboAt: now.toISOString(),
+    }
+
+    try {
+      await updatePlayerProgress(user.id, {
+        currentXp: updatedPlayer.currentXp,
+        comboCount: updatedPlayer.comboCount,
+        lastComboAt: updatedPlayer.lastComboAt,
+      })
+    } catch (error) {
+      // The quest_progress write above already succeeded and is not
+      // rolled back here — see the end-of-turn report for why this is
+      // flagged as a known limitation rather than silently handled.
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save XP.',
+      )
+      return
+    }
+
+    setPlayer(updatedPlayer)
+    setXpFeedback(earnedXp)
+
+    setTimeout(() => {
+      setXpFeedback(null)
+    }, 1500)
   }
 
-  const nextProgress = Math.min(
-    quest.progress + 1,
-    quest.target,
-  )
-
-  const questCompleted = nextProgress >= quest.target
-
-  setQuests((currentQuests) =>
-    currentQuests.map((item) =>
-      item.id === questId
-        ? {
-            ...item,
-            progress: nextProgress,
-          }
-        : item,
-    ),
-  )
-
-  if (!questCompleted) {
-    return
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-6xl">
+        <p className="text-slate-400">Loading your quests...</p>
+      </section>
+    )
   }
 
-  const now = new Date()
-  const comboWindow = 24 * 60 * 60 * 1000
-
-  const currentCombo =
-    player.lastComboAt &&
-    now.getTime() - new Date(player.lastComboAt).getTime() <= comboWindow
-      ? player.comboCount
-      : 0
-
-  const nextCombo = currentCombo + 1
-  const comboMultiplier = 1 + (nextCombo - 1) * 0.1
-  const earnedXp = Math.round(quest.xpReward * comboMultiplier)
-
-  setPlayer((currentPlayer) => ({
-    ...currentPlayer,
-    currentXp: currentPlayer.currentXp + earnedXp,
-    comboCount: nextCombo,
-    lastComboAt: now.toISOString(),
-  }))
-
-  setXpFeedback(earnedXp)
-
-  setTimeout(() => {
-    setXpFeedback(null)
-  }, 1500)
-}
+  if (loadError || !player) {
+    return (
+      <section className="mx-auto max-w-6xl">
+        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400">
+          {loadError ?? 'Something went wrong loading your data.'}
+        </p>
+        <button
+          type="button"
+          onClick={retryLoad}
+          className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-400"
+        >
+          Try Again
+        </button>
+      </section>
+    )
+  }
 
   return (
     <section className="mx-auto max-w-6xl">
