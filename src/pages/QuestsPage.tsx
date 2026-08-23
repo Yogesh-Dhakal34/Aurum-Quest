@@ -47,7 +47,7 @@ function QuestsPage() {
         // `player.currentXp` below.
         if (!loadedPlayer) {
           setLoadError(
-            'No player profile found yet. Onboarding (Phase 3.4) will create this automatically once built.',
+            'No player profile found. This should not happen after completing onboarding — try signing out and back in, or contact support if it persists.',
           )
           return
         }
