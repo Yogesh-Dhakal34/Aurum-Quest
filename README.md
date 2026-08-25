@@ -107,8 +107,6 @@ src/
 └── types/        Shared contracts
 ```
 
-Full data model: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-
 <br>
 
 ---
@@ -148,7 +146,7 @@ npm run lint     # code quality check
 | 6 — Realm Progression | ⬜ | `v0.6.0` |
 | 7+ — Analytics, PWA, AI, Public Beta | ⬜ | — |
 
-Full phase-by-phase detail: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+*(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
 <details>
 <summary><strong>What Phase 3 actually delivered</strong></summary>
@@ -179,7 +177,7 @@ Full phase-by-phase detail: [`docs/ROADMAP.md`](docs/ROADMAP.md)
               IMMERSIVE WORLD
 ```
 
-Achievements, character stats, realm progression, analytics, and an optional AI companion — see [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's planned and why each is sequenced where it is.
+Achievements, character stats, realm progression, analytics, and an optional AI companion are planned and sequenced in the project's separate planning docs.
 
 <br>
 
@@ -201,11 +199,9 @@ Small changes, clear responsibilities, testable functionality. The app grows by 
 
 | Doc | Covers |
 |---|---|
-| [`docs/PRD.md`](docs/PRD.md) | Product goals, audience, non-goals |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Full phase breakdown, effort sizing |
-| [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md) | XP/quest/realm rules |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Data model, folder structure |
 | [`DEV_JOURNAL.md`](DEV_JOURNAL.md) | Decisions, incidents, test results |
+
+Product/roadmap/architecture planning docs (PRD, roadmap, gameplay rules, data model) are maintained separately from this repo.
 
 <br>
 

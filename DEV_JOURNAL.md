@@ -153,4 +153,4 @@ git add . && git commit -m "..." && git push
 
 Achievements · Realm progression · Character stats · Progress analytics · Audio/PWA · AI companion · Public beta
 
-Designed only when their requirements become concrete — see `ROADMAP.md`.
+Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.
