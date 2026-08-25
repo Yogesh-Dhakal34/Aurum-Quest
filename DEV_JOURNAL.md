@@ -1,757 +1,156 @@
-# Aurum Quest — Development Journal
+<div align="center">
 
-This journal records major implementation decisions, architecture changes, testing results, and development milestones for Aurum Quest.
+# 📖 Aurum Quest — Development Journal
 
----
+*A chronological record of decisions, incidents, and milestones.*
 
-# Phase 0 — Environment & Initialization
+</div>
 
-## Completed
-
-* Created the React + TypeScript + Vite project.
-* Installed project dependencies.
-* Configured the project for local development.
-* Verified the application runs with `npm run dev`.
-* Initialized Git.
-* Created the `main` branch.
-* Created the initial commit.
-* Connected the local repository to GitHub.
-* Pushed the initial project to GitHub.
-* Verified a clean Git working tree.
+<br>
 
 ---
 
-# Phase 1 — Opening Experience + App Shell + First Dashboard
+## 📌 Milestone Overview
 
-## Completed
+| Phase | Focus | Status |
+|---|---|:---:|
+| 0 | Environment & Initialization | ✅ |
+| 1 | Opening Experience + App Shell + First Dashboard | ✅ |
+| 2 | Progression & Local Persistence | ✅ |
+| 3 | Backend & Data Architecture | ✅ |
+| 4 | Gamification Engine | ⬜ Next |
 
-* Added branded opening experience.
-* Added responsive desktop and mobile application shell.
-* Added navigation for:
-
-  * Quests
-  * Legend
-  * Progress
-  * Realm
-  * Settings
-* Added player identity card.
-* Added player level.
-* Added XP progression display.
-* Added streak display.
-* Added player title.
-* Added static quest data.
-* Added quest categories.
-* Added quest difficulty.
-* Added quest XP rewards.
-* Added quest grouping by category.
-* Added quest completion.
-* Added visible quest state changes.
-* Added animated XP feedback.
-* Added today's XP calculation.
-* Added daily progress calculation.
-* Added completion percentage.
-* Added responsive desktop/mobile layouts.
-
-## Phase 1 QA
-
-### Desktop
-
-* Opening experience tested.
-* Sidebar navigation tested.
-* Quest grouping tested.
-* Quest completion tested.
-* XP feedback tested.
-* Daily XP tested.
-* Daily progress percentage tested.
-* No obvious layout issues observed.
-
-### Mobile
-
-* Mobile navigation tested.
-* Quest grouping tested.
-* Quest completion tested.
-* XP feedback tested.
-* Daily XP and progress tested.
-* No horizontal layout issues observed.
-* Tested at mobile viewport sizes.
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2 — Progression & Local Persistence
+## Phase 0 — Environment & Initialization
 
-## Phase 2 Objective
+Set up React + TypeScript + Vite, verified `npm run dev`, initialized Git, pushed the first commit to GitHub.
 
-Phase 2 moved Aurum Quest from a mostly temporary interface into a locally persistent application.
+**Result: PASS**
 
-The objective was to establish reliable local state before introducing a backend.
-
----
-
-## Phase 2.1 — Local Persistence Layer
-
-### Implemented
-
-Created:
-
-```text
-src/hooks/usePersistentState.ts
-src/lib/storage.ts
-```
-
-The persistence architecture became:
-
-```text
-React Component
-      │
-      ▼
-usePersistentState
-      │
-      ▼
-storage.ts
-      │
-      ▼
-localStorage
-```
-
-### Persistent State
-
-The application now persists:
-
-* Player state
-* Quest state
-* Daily date state
-
-### Reliability
-
-The storage layer includes:
-
-* JSON serialization
-* JSON parsing
-* storage availability checks
-* error handling
-* optional runtime validation
-* fallback to initial values when stored data is invalid
-
-This prevents corrupted localStorage data from crashing the application.
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2.2 — Daily Date System
+## Phase 1 — Opening Experience + App Shell + First Dashboard
 
-## Implemented
+Built the branded entry experience, responsive app shell, navigation (Quests / Legend / Progress / Realm / Settings), player identity card, static quest data with categories/difficulty/XP, quest completion with animated XP feedback, and daily progress tracking.
 
-Created:
+Tested on both desktop and mobile viewports — no layout issues.
 
-```text
-src/lib/date.ts
-```
+**Result: PASS** · Release `v0.1.0`
 
-The application uses a GMT-based date key.
-
-```text
-getGmtDateKey()
-```
-
-This provides a consistent daily boundary independent of the user's local timezone.
-
-### Daily Reset
-
-When the stored daily date differs from the current GMT date:
-
-* Quest progress is reset.
-* Daily combo state is reset.
-* The stored date is updated.
-
-### Testing
-
-The daily date was manually modified through browser developer tools to simulate a date change.
-
-Example:
-
-```javascript
-localStorage.getItem('aurum-quest:dailyDate')
-```
-
-The date could be changed manually and the application correctly responded to the new date.
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2.3 — Quest Combo System
+## Phase 2 — Progression & Local Persistence
 
-## Implemented
+Moved the app from in-memory state to a real local persistence layer.
 
-A quest combo system was introduced to reward consecutive quest completion.
+| Sub-phase | What shipped |
+|---|---|
+| 2.1 | `usePersistentState` + `storage.ts` — reusable localStorage layer with validation/fallback for corrupted data |
+| 2.2 | `date.ts` — GMT-based daily reset, independent of local timezone |
+| 2.3 | Quest combo system (`comboCount`, `lastComboAt`), tied to real completion events so reloads can't inflate it |
+| 2.4 | Progress-based quests (`progress`/`target`), multi-session quest support |
+| 2.5 | XP awarded on completion, combo multiplier applied, level/XP tracked in player state |
+| 2.6 | Full integration test: open → load → complete → persist → reload → state survives |
 
-The system tracks:
+**Result: PASS** · Release `v0.2.0` · Commit `5bb18f3`
 
-```text
-comboCount
-lastComboAt
-```
-
-The combo multiplier increases with consecutive completions.
-
-The system was also tested against the daily reset behavior.
-
-### Important Design Decision
-
-The combo system is tied to actual quest completion events rather than simply counting completed quests on the screen.
-
-This prevents page reloads from artificially increasing the combo.
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2.4 — Progress-Based Quests
+## Phase 3 — Backend & Data Architecture
 
-## Implemented
+**Goal:** move from single-browser local state to a real, multi-user, Supabase-backed application — without collapsing everything into one file. Target layering: `React UI → Domain Services → Supabase Client → PostgreSQL`.
 
-Quest structure was expanded from a simple completed/not-completed model to:
+### What shipped
 
-```text
-progress
-target
+| Sub-phase | What shipped |
+|---|---|
+| 3.1 Foundation | `lib/supabase.ts`, env config, verified connection |
+| 3.2 Database | 5 tables (`profiles`, `player_state`, `quest_definitions`, `quest_progress`, `daily_state`), RLS enabled on all |
+| 3.3 Service Layer | `playerService.ts`, `questService.ts` — pages call services, never query Supabase directly |
+| 3.4 Onboarding | New sign-ups get a real onboarding flow (name, avatar, timezone, focus areas) instead of a manually-inserted row |
+| 3.5 Authentication | Sign up, sign in, sign out, session persistence — `AuthContext` + `useAuth` |
+| 3.5 Data Safety | Fixed a real double-click race condition (below) |
+| 3.6 Security | RLS policies scoped per-user, proven correct via the incident below |
+
+### 🔴 Incident 1 — 403 on every table (missing GRANTs)
+
+**Symptom:** every Supabase request returned `403`, across all four tables, immediately after sign-in.
+
+**Cause:** Supabase changed its default behavior for new projects (May 2026) — tables no longer auto-receive `GRANT`s for `anon`/`authenticated`. Our migrations created tables and RLS policies correctly, but RLS never got a chance to evaluate — the request was rejected a layer earlier, at the Postgres grant level.
+
+**Diagnosis:** ruled out URL/key mismatch first, then queried `information_schema.role_table_grants` directly instead of guessing further — showed `authenticated` missing `SELECT`/`INSERT`/`UPDATE` on all 4 tables.
+
+**Fix:** explicit `GRANT` statements added for each table.
+
+**Lesson:** every future table needs an explicit `GRANT` alongside its RLS policy — RLS alone isn't sufficient on a project created after May 2026.
+
+### 🔴 Incident 2 — Duplicate display names blocked onboarding
+
+**Symptom:** a second test account using the same name as an existing one ("Adventurer") failed onboarding with a generic, unhelpful error.
+
+**Cause:** the original migration created the column as `username text not null unique`. When it was later renamed to `name`, Postgres kept the `UNIQUE` constraint — renaming a column doesn't drop its constraints. A display name was silently enforced as globally unique, which was never intended.
+
+**Fix:** dropped the leftover constraint. Also added `toReadableError()` — maps Postgres error codes (`23505` unique violation, `23514` check violation) to plain-language messages instead of raw/generic errors, so future conflicts fail helpfully.
+
+### 🔴 Incident 3 — Duplicate XP from rapid clicks
+
+**Symptom:** moving quest completion to a network call reopened a race Phase 2 had already closed — two fast clicks could both read the same starting progress before either write landed.
+
+**Verified with a script** before fixing: two concurrent calls produced 1 increment instead of 2, confirming the race was real, not theoretical.
+
+**Fix:** a `pendingQuestIds` guard in `QuestsPage.tsx`, checked synchronously before any `await`, so a second click is rejected client-side before a second network call is ever made. Verified the fix with the same reproduction script — race closed, normal sequential clicking unaffected.
+
+### Phase 3 Success Criteria — both proven live, not just coded
+
+```
+Sign in → Profile loads → Quests load → Complete quest →
+XP updates → Reload → data still exists           ✅ Verified
+
+User A cannot read/write User B's data (RLS)       ✅ Verified
 ```
 
-Example:
+**Result: PASS**
 
-```text
-Progress: 2 / 3
-```
-
-A quest can therefore require multiple sessions/actions before completion.
-
-### Quest Validation
-
-The system prevents progress from exceeding the quest target.
-
-The quest becomes completed when:
-
-```text
-progress >= target
-```
-
-### Quest Card
-
-`src/components/QuestCard.tsx` was updated to:
-
-* Display current progress.
-* Display target.
-* Display progress percentage.
-* Disable completion when the target is reached.
-* Continue displaying the correct XP reward.
-
-### Testing
-
-Multi-session quest behavior was tested through three sessions.
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2.5 — XP & Progression
+## 🧠 Development Philosophy
 
-## Implemented
-
-XP is now awarded when a quest reaches its target.
-
-The player state tracks:
-
-```text
-currentXp
-xpToNextLevel
-level
+```
+DEFINE → ARCHITECT → BUILD → TEST → VERIFY → COMMIT → PUSH → EXPAND ↺
 ```
 
-Combo multipliers can affect the XP awarded by a completed quest.
+Small changes. Clear responsibilities. Testable functionality. The app grows by *domain*, not by piling logic into whichever file is open.
 
-Animated XP feedback was also retained.
-
-### Daily Progress
-
-The dashboard displays:
-
-* Today's XP
-* Completed quests
-* Total quests
-* Completion percentage
-* Progress bar
-
-### Result
-
-**PASS**
+<br>
 
 ---
 
-# Phase 2.6 — Phase 2 Integration Testing
-
-The completed Phase 2 system was tested as a combined workflow.
-
-```text
-Open application
-      ↓
-Load persisted state
-      ↓
-View today's quests
-      ↓
-Complete quest
-      ↓
-Update progress
-      ↓
-Award XP
-      ↓
-Update combo
-      ↓
-Persist state
-      ↓
-Reload application
-      ↓
-State remains
-```
-
-Additional tests included:
-
-* Completing quests across multiple sessions.
-* Reloading the browser.
-* Inspecting localStorage.
-* Testing daily reset behavior.
-* Testing combo behavior.
-* Testing progress-based quests.
-* Testing production builds.
-
-### Production Build
+## 🔧 Reference Commands
 
 ```bash
-npm run build
+npm install && npm run dev      # local dev
+npm run build && npm run lint   # before every commit
+git status && git diff --check  # sanity check before staging
+git add . && git commit -m "..." && git push
 ```
 
-Result:
-
-**PASS**
-
-### Git Status
-
-Phase 2 functionality was committed successfully.
-
-Latest recorded commit:
-
-```text
-5bb18f3 feat: add progress-based quests
-```
-
-The branch was subsequently pushed as part of the Phase 2 workflow.
+<br>
 
 ---
 
-# Phase 2 Final Result
+## 🔮 Future Phases (not yet started)
 
-**PASS**
+Achievements · Realm progression · Character stats · Progress analytics · Audio/PWA · AI companion · Public beta
 
-Aurum Quest is now a functional locally persistent productivity RPG prototype.
-
-The application is no longer dependent entirely on static in-memory state.
-
----
-
-# Phase 3 — Backend & Data Architecture
-
-## Status
-
-**STARTING**
-
-Phase 3 marks the transition from a single-browser local application toward a multi-user backend-backed application.
-
-Supabase has been prepared as the backend platform.
-
-The current Supabase project is healthy and ready for development.
-
----
-
-# Phase 3 Architecture Goal
-
-The main objective is **not** to immediately move every piece of code into Supabase.
-
-The objective is to establish a clean architecture first.
-
-The target architecture is:
-
-```text
-┌─────────────────────────────┐
-│        React Frontend       │
-│                             │
-│ Pages / Components / Hooks  │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│      Domain Services        │
-│                             │
-│ Player / Quest / Progress   │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│       Supabase Client       │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│        PostgreSQL DB        │
-└─────────────────────────────┘
-```
-
----
-
-# Phase 3 Architectural Principle
-
-Aurum Quest should avoid placing unrelated functionality inside a single page component.
-
-For example, `QuestsPage.tsx` should not eventually contain:
-
-* UI rendering
-* XP calculations
-* combo algorithms
-* database queries
-* authentication
-* storage logic
-* date utilities
-* quest persistence
-* player persistence
-
-Instead, functionality should be divided by responsibility.
-
-Target direction:
-
-```text
-components/
-    UI
-
-pages/
-    Page composition
-
-hooks/
-    React state behavior
-
-services/
-    Domain operations
-
-lib/
-    Infrastructure utilities
-
-types/
-    Domain contracts
-
-data/
-    Development seed/static data
-```
-
----
-
-# Phase 3.0 — Architecture Foundation
-
-## Planned
-
-* [ ] Update README
-* [ ] Update development journal
-* [ ] Define backend architecture
-* [ ] Identify domain boundaries
-* [ ] Introduce service layer
-* [ ] Define database models
-* [ ] Decide which data belongs in PostgreSQL
-* [ ] Decide which state remains client-side
-
----
-
-# Phase 3.1 — Supabase Foundation
-
-## Planned
-
-* [ ] Install Supabase JavaScript client
-* [ ] Add environment configuration
-* [ ] Create `src/lib/supabase.ts`
-* [ ] Connect frontend to Supabase
-* [ ] Verify connection
-* [ ] Establish database access conventions
-
----
-
-# Phase 3.2 — Database Design
-
-## Initial Domains
-
-The first database design will focus on a small number of domains.
-
-```text
-User
- │
- ▼
-Profile
- │
- ├── Player progression
- │
- └── Future settings
-
-Quest
- │
- ▼
-User Quest / Quest Progress
-```
-
-The schema will deliberately remain small initially.
-
-Additional systems such as achievements, statistics, realm data, social features, and advanced analytics will not be added until their requirements are understood.
-
----
-
-# Phase 3.3 — Service Layer
-
-Planned services:
-
-```text
-src/services/
-
-playerService.ts
-questService.ts
-progressService.ts
-```
-
-Services will provide a boundary between the React UI and the backend.
-
-For example:
-
-```text
-QuestsPage
-    │
-    ▼
-questService.completeQuest()
-    │
-    ▼
-Supabase
-```
-
-Rather than:
-
-```text
-QuestsPage
-    │
-    └── Direct database query
-```
-
-This will keep page components smaller and make the backend easier to replace or modify later.
-
----
-
-# Phase 3.4 — Database Persistence
-
-After the database foundation is verified:
-
-* [ ] Persist player profile
-* [ ] Persist player progression
-* [ ] Persist quest definitions
-* [ ] Persist user quest progress
-* [ ] Persist completion state
-* [ ] Verify reload persistence
-* [ ] Verify data integrity
-
----
-
-# Phase 3.5 — Authentication Foundation
-
-Authentication will be introduced after the database model is proven.
-
-Planned:
-
-```text
-Register
-   ↓
-Login
-   ↓
-Authenticated User
-   ↓
-Profile
-   ↓
-User-owned Data
-```
-
-Planned functionality:
-
-* [ ] Registration
-* [ ] Login
-* [ ] Logout
-* [ ] Session persistence
-* [ ] User identity
-* [ ] User-owned player data
-* [ ] User-owned quest data
-* [ ] Protected database access
-
----
-
-# Phase 3.6 — Security
-
-Database security will be introduced alongside authenticated data.
-
-Planned:
-
-* [ ] Row Level Security
-* [ ] User ownership policies
-* [ ] Prevent unauthorized reads
-* [ ] Prevent unauthorized writes
-* [ ] Verify policies through testing
-
-Security will be treated as part of the database architecture rather than as a final add-on.
-
----
-
-# Phase 3 Success Criteria
-
-Phase 3 will not be considered complete simply because Supabase is connected.
-
-The phase should eventually demonstrate:
-
-```text
-User
- ↓
-Authenticated Session
- ↓
-Profile Loaded
- ↓
-Today's Quests Loaded
- ↓
-Quest Completed
- ↓
-Progress Updated
- ↓
-XP Updated
- ↓
-Data Saved
- ↓
-Browser Reload
- ↓
-Data Still Exists
-```
-
-And:
-
-```text
-User A
-  ↓
-Can access User A's data
-
-User B
-  ↓
-Can access User B's data
-
-User A
-  X
-Cannot access User B's private data
-```
-
-Only after these fundamentals work should more advanced systems be added.
-
----
-
-# Future Phases
-
-Potential future areas include:
-
-* Achievements
-* Advanced statistics
-* Quest history
-* Streak history
-* Advanced progression
-* Realm/world system
-* Personalization
-* Notifications
-* Social features
-* Analytics
-* More immersive RPG mechanics
-
-These systems will be designed only when their requirements become concrete.
-
----
-
-# Development Philosophy
-
-Aurum Quest follows an incremental development model.
-
-```text
-       DEFINE
-         │
-         ▼
-      ARCHITECT
-         │
-         ▼
-       BUILD
-         │
-         ▼
-        TEST
-         │
-         ▼
-       VERIFY
-         │
-         ▼
-       COMMIT
-         │
-         ▼
-        PUSH
-         │
-         ▼
-       EXPAND
-         │
-         └───────────────↺
-```
-
-The project prioritizes:
-
-**Small changes · Clear responsibilities · Testable functionality · Reliable state · Incremental architecture**
-
-The application should grow by functionality rather than by continuously adding unrelated logic to existing files.
-
----
-
-# Important Commands
-
-```bash
-npm install
-npm run dev
-npm run build
-npm run lint
-
-git status
-git diff --check
-git add .
-git commit -m "message"
-git push
-```
-
----
-
-# Current Milestone
-
-```text
-Phase 0  ████████████████████  COMPLETE
-Phase 1  ████████████████████  COMPLETE
-Phase 2  ████████████████████  COMPLETE
-Phase 3  ░░░░░░░░░░░░░░░░░░░░  STARTING
-```
-
-**Current focus:**
-
-> Establish a clean backend architecture and begin the migration from local browser persistence toward Supabase-backed application data.
+Designed only when their requirements become concrete — see `ROADMAP.md`.
