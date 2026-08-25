@@ -3,10 +3,10 @@ import type { Quest } from '../types/quest'
 type QuestCardProps = {
   quest: Quest
   onComplete: (questId: string) => void
-
+  isPending: boolean
 }
 
-function QuestCard({ quest, onComplete }: QuestCardProps) {  const progressPercentage = (quest.progress / quest.target) * 100
+function QuestCard({ quest, onComplete, isPending }: QuestCardProps) {  const progressPercentage = (quest.progress / quest.target) * 100
 
   return (
     <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -52,16 +52,18 @@ function QuestCard({ quest, onComplete }: QuestCardProps) {  const progressPerce
 
       <button
         type="button"
-        disabled={quest.progress >= quest.target}
+        disabled={quest.progress >= quest.target || isPending}
         onClick={() => onComplete(quest.id)}
         className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
       >
 
       {quest.progress >= quest.target
         ? 'Completed'
-        : quest.unit === 'completion'
-          ? 'Complete Quest'
-          : 'Add Progress'}
+        : isPending
+          ? 'Saving...'
+          : quest.unit === 'completion'
+            ? 'Complete Quest'
+            : 'Add Progress'}
       </button>
     </article>
   )

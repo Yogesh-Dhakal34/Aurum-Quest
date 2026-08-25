@@ -16,6 +16,16 @@ function QuestsPage() {
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  // Tracks which quest IDs currently have an in-flight
+  // advanceQuestProgress request. This is what actually prevents the
+  // duplicate-XP race: a second click on the same quest while its first
+  // request is still pending is rejected immediately, client-side,
+  // before a second network call is even made — not just after the
+  // fact via a disabled prop that only updates once the first response
+  // returns.
+  const [pendingQuestIds, setPendingQuestIds] = useState<Set<string>>(
+    new Set(),
+  )
   // Bumped by the retry button to re-trigger the effect below without
   // needing loadData itself to be called from an event handler — keeps
   // data-fetching entirely inside the effect, per React's guidance that
@@ -112,11 +122,23 @@ function QuestsPage() {
   const handleCompleteQuest = async (questId: string) => {
     if (!user || !player) return
 
+    // This check must happen synchronously, before any `await`, so that
+    // a second click arriving while the first request is still pending
+    // sees the ID already in the set and bails out immediately — no
+    // network call, no chance to race. Checking only via the `disabled`
+    // prop on the button isn't enough: React doesn't re-render between
+    // the first click's synchronous handler start and the point where
+    // `await advanceQuestProgress` yields, so a very fast second click
+    // could still fire before the button visually updates.
+    if (pendingQuestIds.has(questId)) return
+
     const quest = quests.find((item) => item.id === questId)
 
     if (!quest || quest.progress >= quest.target) {
       return
     }
+
+    setPendingQuestIds((current) => new Set(current).add(questId))
 
     let result: { newProgress: number; justCompleted: boolean }
 
@@ -126,6 +148,11 @@ function QuestsPage() {
       setLoadError(
         error instanceof Error ? error.message : 'Failed to update quest.',
       )
+      setPendingQuestIds((current) => {
+        const next = new Set(current)
+        next.delete(questId)
+        return next
+      })
       return
     }
 
@@ -138,6 +165,11 @@ function QuestsPage() {
     )
 
     if (!result.justCompleted) {
+      setPendingQuestIds((current) => {
+        const next = new Set(current)
+        next.delete(questId)
+        return next
+      })
       return
     }
 
@@ -179,11 +211,21 @@ function QuestsPage() {
       setLoadError(
         error instanceof Error ? error.message : 'Failed to save XP.',
       )
+      setPendingQuestIds((current) => {
+        const next = new Set(current)
+        next.delete(questId)
+        return next
+      })
       return
     }
 
     setPlayer(updatedPlayer)
     setXpFeedback(earnedXp)
+    setPendingQuestIds((current) => {
+      const next = new Set(current)
+      next.delete(questId)
+      return next
+    })
 
     setTimeout(() => {
       setXpFeedback(null)
@@ -317,6 +359,7 @@ function QuestsPage() {
               key={quest.id}
               quest={quest}
               onComplete={handleCompleteQuest}
+              isPending={pendingQuestIds.has(quest.id)}
             />
           ))}
         </div>
