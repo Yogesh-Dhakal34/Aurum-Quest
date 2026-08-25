@@ -59,7 +59,7 @@ Moved the app from in-memory state to a real local persistence layer.
 | 2.5 | XP awarded on completion, combo multiplier applied, level/XP tracked in player state |
 | 2.6 | Full integration test: open → load → complete → persist → reload → state survives |
 
-**Result: PASS** · Release `v0.2.0` · Commit `5bb18f3`
+**Result: PASS** · Release `v0.2.0`
 
 <br>
 
