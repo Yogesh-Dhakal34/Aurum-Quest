@@ -59,7 +59,7 @@ Moved the app from in-memory state to a real local persistence layer.
 | 2.5 | XP awarded on completion, combo multiplier applied, level/XP tracked in player state |
 | 2.6 | Full integration test: open → load → complete → persist → reload → state survives |
 
-**Result: PASS** · Release `v0.2.0` · Commit `5bb18f3`
+**Result: PASS** · Release `v0.2.0`
 
 <br>
 
@@ -153,4 +153,8 @@ git add . && git commit -m "..." && git push
 
 Achievements · Realm progression · Character stats · Progress analytics · Audio/PWA · AI companion · Public beta
 
+<<<<<<< HEAD
 Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.
+=======
+Designed only when their requirements become concrete — see `ROADMAP.md`.
+>>>>>>> 8edc6a703ddb4febb93f75c38ab928075ad6f642
