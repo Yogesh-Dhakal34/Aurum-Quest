@@ -3,7 +3,9 @@ import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
 import { useAuth } from '../hooks/useAuth'
 import { getPlayer, updatePlayerProgress } from '../services/playerService'
+import type { UpdatePlayerProgressResult } from '../services/playerService'
 import { advanceQuestProgress, getTodaysQuests } from '../services/questService'
+import { calculateComboState, calculateXpReward } from '../lib/xp'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 import { useEffect, useState } from 'react'
@@ -173,36 +175,25 @@ function QuestsPage() {
       return
     }
 
-    // --- Combo/XP math below is unchanged from the previous
-    // localStorage-based version. Only where the result is persisted
-    // (updatePlayerProgress, a Supabase call, instead of setPlayer +
-    // usePersistentState) has changed. ---
+    // Phase 4.1: combo/XP math now lives in src/lib/xp.ts — this is the
+    // actual "centralize" step. QuestsPage calls the engine instead of
+    // computing the multiplier/reward itself.
 
     const now = new Date()
-    const comboWindow = 24 * 60 * 60 * 1000
+    const nextCombo = calculateComboState(
+      player.comboCount,
+      player.lastComboAt,
+      now,
+    )
+    const earnedXp = calculateXpReward(quest.xpReward, nextCombo)
 
-    const currentCombo =
-      player.lastComboAt &&
-      now.getTime() - new Date(player.lastComboAt).getTime() <= comboWindow
-        ? player.comboCount
-        : 0
-
-    const nextCombo = currentCombo + 1
-    const comboMultiplier = 1 + (nextCombo - 1) * 0.1
-    const earnedXp = Math.round(quest.xpReward * comboMultiplier)
-
-    const updatedPlayer: Player = {
-      ...player,
-      currentXp: player.currentXp + earnedXp,
-      comboCount: nextCombo,
-      lastComboAt: now.toISOString(),
-    }
+    let progressResult: UpdatePlayerProgressResult
 
     try {
-      await updatePlayerProgress(user.id, {
-        currentXp: updatedPlayer.currentXp,
-        comboCount: updatedPlayer.comboCount,
-        lastComboAt: updatedPlayer.lastComboAt,
+      progressResult = await updatePlayerProgress(user.id, player.level, {
+        currentXp: player.currentXp + earnedXp,
+        comboCount: nextCombo,
+        lastComboAt: now.toISOString(),
       })
     } catch (error) {
       // The quest_progress write above already succeeded and is not
@@ -219,7 +210,14 @@ function QuestsPage() {
       return
     }
 
-    setPlayer(updatedPlayer)
+    setPlayer({
+      ...player,
+      currentXp: player.currentXp + earnedXp,
+      comboCount: nextCombo,
+      lastComboAt: now.toISOString(),
+      level: progressResult.level,
+      xpToNextLevel: progressResult.xpToNextLevel,
+    })
     setXpFeedback(earnedXp)
     setPendingQuestIds((current) => {
       const next = new Set(current)

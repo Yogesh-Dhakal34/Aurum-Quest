@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { levelFromXp } from '../lib/xp'
 import type { Player } from '../types/player'
 
 /**
@@ -76,22 +77,39 @@ export async function getPlayer(userId: string): Promise<Player | null> {
   return toPlayer(profile, state)
 }
 
+export type UpdatePlayerProgressResult = {
+  level: number
+  xpToNextLevel: number
+  leveledUp: boolean
+}
+
 /**
  * Persists an updated Player back to profiles + player_state.
  *
- * Deliberately narrow: only writes the progression fields that
- * QuestsPage's existing combo/XP logic actually changes (currentXp,
- * comboCount, lastComboAt). Does not touch name/title/avatar — those
- * belong to a future profile-editing feature, not quest completion.
+ * As of Phase 4.1, this also derives `level` and `xp_to_next_level` from
+ * the new `currentXp` via the centralized xp.ts engine (levelFromXp),
+ * rather than trusting a caller-supplied level number. This is what
+ * replaces the previously-static xp_to_next_level: 500 default with a
+ * value that's always correctly derived from lifetime XP.
+ *
+ * Deliberately narrow on which fields it accepts: only the progression
+ * fields quest completion actually changes (currentXp, comboCount,
+ * lastComboAt). Does not touch name/title/avatar — those belong to a
+ * future profile-editing feature, not quest completion.
  */
 export async function updatePlayerProgress(
   userId: string,
+  currentLevel: number,
   updates: Pick<Player, 'currentXp' | 'comboCount' | 'lastComboAt'>,
-): Promise<void> {
+): Promise<UpdatePlayerProgressResult> {
+  const { level, xpToNextLevel } = levelFromXp(updates.currentXp)
+
   const { error } = await supabase
     .from('player_state')
     .update({
       current_xp: updates.currentXp,
+      level,
+      xp_to_next_level: xpToNextLevel,
       combo_count: updates.comboCount,
       last_combo_at: updates.lastComboAt,
       updated_at: new Date().toISOString(),
@@ -99,4 +117,10 @@ export async function updatePlayerProgress(
     .eq('user_id', userId)
 
   if (error) throw error
+
+  return {
+    level,
+    xpToNextLevel,
+    leveledUp: level > currentLevel,
+  }
 }
