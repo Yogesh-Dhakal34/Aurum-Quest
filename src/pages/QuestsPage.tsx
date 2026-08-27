@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
+import LevelUpOverlay from '../components/LevelUpOverlay'
 import { useAuth } from '../hooks/useAuth'
 import { getPlayer, updatePlayerProgress } from '../services/playerService'
 import type { UpdatePlayerProgressResult } from '../services/playerService'
@@ -16,6 +17,11 @@ function QuestsPage() {
   const [player, setPlayer] = useState<Player | null>(null)
   const [quests, setQuests] = useState<Quest[]>([])
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
+  // Set to the new level number when a completion crosses a level
+  // threshold; null means no overlay should show. Deliberately separate
+  // from xpFeedback — a level-up is the one moment that gets the
+  // full-screen treatment, ordinary XP gain does not.
+  const [levelUpTo, setLevelUpTo] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   // Tracks which quest IDs currently have an in-flight
@@ -91,9 +97,9 @@ function QuestsPage() {
   // PHASE_3_DATABASE_ARCHITECTURE.md §3.4), so getTodaysQuests()
   // naturally returns progress: 0 for a new day — there's nothing to
   // reset, there's simply no row for today yet until a quest is advanced.
-  // Combo count, however, genuinely needs a same-day check before being
-  // reused — that logic lives in handleCompleteQuest below, matching the
-  // original comboWindow check exactly.
+  // Combo state is unrelated to the daily reset — it's governed by its
+  // own 2-hour step window, entirely inside src/lib/xp.ts (see that
+  // file for the full reasoning).
 
   const completedQuests = quests.filter(
     (quest) => quest.progress >= quest.target,
@@ -219,6 +225,11 @@ function QuestsPage() {
       xpToNextLevel: progressResult.xpToNextLevel,
     })
     setXpFeedback(earnedXp)
+
+    if (progressResult.leveledUp) {
+      setLevelUpTo(progressResult.level)
+    }
+
     setPendingQuestIds((current) => {
       const next = new Set(current)
       next.delete(questId)
@@ -256,6 +267,7 @@ function QuestsPage() {
   }
 
   return (
+    <>
     <section className="mx-auto max-w-6xl">
       <div className="mb-8">
         <p className="text-sm text-cyan-400">Aurum Quest</p>
@@ -366,6 +378,16 @@ function QuestsPage() {
   </div>
       </div>
     </section>
+
+    <AnimatePresence>
+      {levelUpTo !== null && (
+        <LevelUpOverlay
+          newLevel={levelUpTo}
+          onDismiss={() => setLevelUpTo(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   )
 }
 
