@@ -15,6 +15,8 @@ type PlayerStateRow = {
   current_xp: number
   xp_to_next_level: number
   streak: number
+  longest_streak: number
+  last_streak_date: string | null
   combo_count: number
   last_combo_at: string | null
 }
@@ -35,6 +37,8 @@ function toPlayer(profile: ProfileRow, state: PlayerStateRow): Player {
     currentXp: state.current_xp,
     xpToNextLevel: state.xp_to_next_level,
     streak: state.streak,
+    longestStreak: state.longest_streak,
+    lastStreakDate: state.last_streak_date,
     comboCount: state.combo_count,
     lastComboAt: state.last_combo_at,
     avatarUrl: profile.avatar_url ?? undefined,
@@ -61,7 +65,7 @@ export async function getPlayer(userId: string): Promise<Player | null> {
       supabase
         .from('player_state')
         .select(
-          'user_id, level, current_xp, xp_to_next_level, streak, combo_count, last_combo_at',
+          'user_id, level, current_xp, xp_to_next_level, streak, longest_streak, last_streak_date, combo_count, last_combo_at',
         )
         .eq('user_id', userId)
         .maybeSingle(),
@@ -94,13 +98,23 @@ export type UpdatePlayerProgressResult = {
  *
  * Deliberately narrow on which fields it accepts: only the progression
  * fields quest completion actually changes (currentXp, comboCount,
- * lastComboAt). Does not touch name/title/avatar — those belong to a
- * future profile-editing feature, not quest completion.
+ * lastComboAt, and — as of Phase 4.3 — streak/longestStreak/
+ * lastStreakDate on the first completion of a day). Does not touch
+ * name/title/avatar — those belong to a future profile-editing
+ * feature, not quest completion.
  */
 export async function updatePlayerProgress(
   userId: string,
   currentLevel: number,
-  updates: Pick<Player, 'currentXp' | 'comboCount' | 'lastComboAt'>,
+  updates: Pick<
+    Player,
+    | 'currentXp'
+    | 'comboCount'
+    | 'lastComboAt'
+    | 'streak'
+    | 'longestStreak'
+    | 'lastStreakDate'
+  >,
 ): Promise<UpdatePlayerProgressResult> {
   const { level, xpToNextLevel } = levelFromXp(updates.currentXp)
 
@@ -112,6 +126,9 @@ export async function updatePlayerProgress(
       xp_to_next_level: xpToNextLevel,
       combo_count: updates.comboCount,
       last_combo_at: updates.lastComboAt,
+      streak: updates.streak,
+      longest_streak: updates.longestStreak,
+      last_streak_date: updates.lastStreakDate,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId)

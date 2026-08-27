@@ -6,7 +6,8 @@ import { useAuth } from '../hooks/useAuth'
 import { getPlayer, updatePlayerProgress } from '../services/playerService'
 import type { UpdatePlayerProgressResult } from '../services/playerService'
 import { advanceQuestProgress, getTodaysQuests } from '../services/questService'
-import { calculateComboState, calculateXpReward } from '../lib/xp'
+import { calculateComboState, calculateStreakUpdate, calculateXpReward } from '../lib/xp'
+import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 import { useEffect, useState } from 'react'
@@ -193,6 +194,31 @@ function QuestsPage() {
     )
     const earnedXp = calculateXpReward(quest.xpReward, nextCombo)
 
+    // Phase 4.3: streak only updates on the FIRST completion of a given
+    // day (per your call on how this should behave) — calculateStreakUpdate
+    // itself is safe to call more than once in a day (it's a no-op if
+    // lastStreakDate already equals today), but we still gate it here so
+    // the intent is explicit at the call site, not just relying on the
+    // function's internal guard.
+    const todayKey = getGmtDateKey(now)
+    const yesterdayKey = getGmtYesterdayKey(now)
+    const isFirstCompletionToday = player.lastStreakDate !== todayKey
+
+    const streakUpdate = isFirstCompletionToday
+      ? calculateStreakUpdate(
+          player.streak,
+          player.longestStreak,
+          player.lastStreakDate,
+          todayKey,
+          yesterdayKey,
+        )
+      : {
+          streak: player.streak,
+          longestStreak: player.longestStreak,
+          lastStreakDate: player.lastStreakDate,
+          streakChanged: false,
+        }
+
     let progressResult: UpdatePlayerProgressResult
 
     try {
@@ -200,6 +226,9 @@ function QuestsPage() {
         currentXp: player.currentXp + earnedXp,
         comboCount: nextCombo,
         lastComboAt: now.toISOString(),
+        streak: streakUpdate.streak,
+        longestStreak: streakUpdate.longestStreak,
+        lastStreakDate: streakUpdate.lastStreakDate,
       })
     } catch (error) {
       // The quest_progress write above already succeeded and is not
@@ -223,6 +252,9 @@ function QuestsPage() {
       lastComboAt: now.toISOString(),
       level: progressResult.level,
       xpToNextLevel: progressResult.xpToNextLevel,
+      streak: streakUpdate.streak,
+      longestStreak: streakUpdate.longestStreak,
+      lastStreakDate: streakUpdate.lastStreakDate,
     })
     setXpFeedback(earnedXp)
 

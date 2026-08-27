@@ -105,6 +105,8 @@ export async function completeOnboarding(
     current_xp: 0,
     xp_to_next_level: 500,
     streak: 0,
+    longest_streak: 0,
+    last_streak_date: null,
     combo_count: 0,
     last_combo_at: null,
   })

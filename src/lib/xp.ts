@@ -127,3 +127,69 @@ export function levelFromXp(totalXp: number): LevelProgress {
     xpToNextLevel: xpAtNextLevel - xpAtLevelStart,
   }
 }
+
+export type StreakUpdate = {
+  streak: number
+  longestStreak: number
+  lastStreakDate: string
+  streakChanged: boolean
+}
+
+/**
+ * Phase 4.3 — Streak System (GAMEPLAY.md §9).
+ *
+ * Determines the new streak state for the FIRST quest completion of a
+ * given day. Deliberately event-driven, not a background job: this
+ * should only be called once per day, on the completion that first
+ * advances quest_progress from "nothing done today" to "something done
+ * today" — QuestsPage is responsible for only calling this on that
+ * first completion (see the isFirstCompletionToday check at the call
+ * site), not on every completion.
+ *
+ * Uses the same GMT date_key format as the daily quest reset
+ * (getGmtDateKey) for "today" and "yesterday" comparison — a simple
+ * string comparison, not a timezone-aware calculation, matching how
+ * quest_progress.date_key already works.
+ *
+ * Three cases:
+ *  - lastStreakDate is today already -> should not happen (caller's
+ *    job to only call this once/day), but handled safely: no change.
+ *  - lastStreakDate is yesterday -> streak continues, +1.
+ *  - lastStreakDate is anything else (null, or older than yesterday)
+ *    -> the chain is broken; streak resets to 1 (today counts as day
+ *    one of a new streak, not zero).
+ *
+ * No freeze/grace mechanic is implemented — GAMEPLAY.md §9 explicitly
+ * says not to build one until its exact rule is defined in that
+ * document first. A missed day breaks the streak, full stop, until
+ * that's revisited.
+ */
+export function calculateStreakUpdate(
+  currentStreak: number,
+  longestStreak: number,
+  lastStreakDate: string | null,
+  todayKey: string,
+  yesterdayKey: string,
+): StreakUpdate {
+  if (lastStreakDate === todayKey) {
+    // Already counted today — no-op. Guards against this being called
+    // more than once in a day, even though the caller shouldn't do that.
+    return {
+      streak: currentStreak,
+      longestStreak,
+      lastStreakDate,
+      streakChanged: false,
+    }
+  }
+
+  const streakContinues = lastStreakDate === yesterdayKey
+  const newStreak = streakContinues ? currentStreak + 1 : 1
+  const newLongest = Math.max(longestStreak, newStreak)
+
+  return {
+    streak: newStreak,
+    longestStreak: newLongest,
+    lastStreakDate: todayKey,
+    streakChanged: true,
+  }
+}
