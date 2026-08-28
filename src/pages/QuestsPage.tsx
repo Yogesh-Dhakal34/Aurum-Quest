@@ -2,14 +2,21 @@ import { AnimatePresence, motion } from 'motion/react'
 import PlayerCard from '../components/PlayerCard'
 import QuestCard from '../components/QuestCard'
 import LevelUpOverlay from '../components/LevelUpOverlay'
+import AchievementToast from '../components/AchievementToast'
 import { useAuth } from '../hooks/useAuth'
 import { getPlayer, updatePlayerProgress } from '../services/playerService'
 import type { UpdatePlayerProgressResult } from '../services/playerService'
-import { advanceQuestProgress, getTodaysQuests } from '../services/questService'
+import {
+  advanceQuestProgress,
+  getLifetimeCompletionCount,
+  getTodaysQuests,
+} from '../services/questService'
+import { checkAndUnlockAchievements } from '../services/achievementService'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
+import type { AchievementDefinition } from '../types/achievement'
 import { useEffect, useState } from 'react'
 
 function QuestsPage() {
@@ -23,6 +30,13 @@ function QuestsPage() {
   // from xpFeedback — a level-up is the one moment that gets the
   // full-screen treatment, ordinary XP gain does not.
   const [levelUpTo, setLevelUpTo] = useState<number | null>(null)
+  // Achievements newly unlocked by the most recent completion. An
+  // array, not a single value — one completion can plausibly cross
+  // multiple thresholds at once (e.g. hitting both 1,000 XP and a
+  // level-up in the same click), and each gets its own toast.
+  const [unlockedAchievements, setUnlockedAchievements] = useState<
+    AchievementDefinition[]
+  >([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   // Tracks which quest IDs currently have an in-flight
@@ -91,6 +105,16 @@ function QuestsPage() {
   }, [user, reloadToken])
 
   const retryLoad = () => setReloadToken((token) => token + 1)
+
+  useEffect(() => {
+    if (unlockedAchievements.length === 0) return
+
+    const timer = setTimeout(() => {
+      setUnlockedAchievements([])
+    }, 4000)
+
+    return () => clearTimeout(timer)
+  }, [unlockedAchievements])
 
   // Note on daily reset: unlike the previous localStorage version, no
   // explicit "reset quests for a new day" step is needed here. Each
@@ -262,6 +286,33 @@ function QuestsPage() {
       setLevelUpTo(progressResult.level)
     }
 
+    // Phase 4.7: check achievements after every successful completion.
+    // Deliberately wrapped in its own try/catch, separate from the XP
+    // save above — a failure here should not roll back or block a
+    // quest completion the player already earned. Achievements are a
+    // recognition layer on top of real progress, not a gate on it.
+    try {
+      const lifetimeCompletions = await getLifetimeCompletionCount(user.id)
+
+      const newlyUnlocked = await checkAndUnlockAchievements(user.id, {
+        questCompletionsTotal: lifetimeCompletions,
+        streakLongest: streakUpdate.longestStreak,
+        levelReached: progressResult.level,
+        xpTotal: player.currentXp + earnedXp,
+        comboReached: nextCombo,
+      })
+
+      if (newlyUnlocked.length > 0) {
+        setUnlockedAchievements(newlyUnlocked)
+      }
+    } catch {
+      // Silently skip — an achievement-check failure should never
+      // surface as a user-facing error for what is, from the player's
+      // perspective, a successful quest completion. Nothing to roll
+      // back: unlocking is additive and re-checked on the next
+      // completion anyway.
+    }
+
     setPendingQuestIds((current) => {
       const next = new Set(current)
       next.delete(questId)
@@ -419,6 +470,14 @@ function QuestsPage() {
         />
       )}
     </AnimatePresence>
+
+    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-2">
+      <AnimatePresence>
+        {unlockedAchievements.map((achievement) => (
+          <AchievementToast key={achievement.id} achievement={achievement} />
+        ))}
+      </AnimatePresence>
+    </div>
     </>
   )
 }

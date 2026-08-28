@@ -72,6 +72,25 @@ export async function getTodaysQuests(userId: string): Promise<Quest[]> {
 }
 
 /**
+ * Phase 4.7 — total lifetime quest completions for a user, across all
+ * days. Distinct from getTodaysQuests, which only reads today's
+ * date_key — this is a simple count, used by achievement checks
+ * ('First Quest', 'Quest Veteran') that need a lifetime total, not a
+ * daily snapshot.
+ */
+export async function getLifetimeCompletionCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('quest_progress')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('completed', true)
+
+  if (error) throw error
+
+  return count ?? 0
+}
+
+/**
  * Advances a quest's progress by one step for today, mirroring the exact
  * increment behavior QuestsPage.tsx already implements client-side
  * (Math.min(progress + 1, target)).
