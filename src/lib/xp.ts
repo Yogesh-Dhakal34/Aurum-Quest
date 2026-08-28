@@ -61,6 +61,36 @@ export function calculateComboState(
 }
 
 /**
+ * Bug fix (2026-08-28): the stored comboCount only ever gets
+ * recalculated inside handleCompleteQuest, at the moment a quest is
+ * actually completed — there's nothing that recalculates it just from
+ * opening the app or time passing. That's correct for the underlying
+ * logic (confirmed: completing a quest outside the 2hr window correctly
+ * resets to 1x, not something-plus-1x), but it meant the UI displayed
+ * yesterday's stale combo count as if it were still "live" between
+ * sessions — e.g. showing "3x" the next morning even though that combo
+ * had already expired hours ago.
+ *
+ * This is a read-only, DISPLAY-ONLY helper — it does not write
+ * anything, does not affect what handleCompleteQuest calculates on the
+ * next completion (that logic is unchanged and already correct). It
+ * just answers "is the stored combo still within its window right now,
+ * or has it silently expired since the last completion" so the UI can
+ * show 0 instead of a number that's no longer actually active.
+ */
+export function getDisplayCombo(
+  comboCount: number,
+  lastComboAt: string | null,
+  now: Date = new Date(),
+): number {
+  const withinStepWindow =
+    lastComboAt !== null &&
+    now.getTime() - new Date(lastComboAt).getTime() <= COMBO_STEP_WINDOW_MS
+
+  return withinStepWindow ? comboCount : 0
+}
+
+/**
  * Calculates the final XP awarded for a quest completion, applying the
  * combo multiplier — capped at MAX_COMBO_MULTIPLIER (see above) so the
  * bonus stays a bonus, never the dominant source of a completion's XP,

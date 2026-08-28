@@ -12,7 +12,7 @@ import {
   getTodaysQuests,
 } from '../services/questService'
 import { checkAndUnlockAchievements } from '../services/achievementService'
-import { calculateComboState, calculateStreakUpdate, calculateXpReward } from '../lib/xp'
+import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
@@ -349,6 +349,8 @@ function QuestsPage() {
     )
   }
 
+  const displayCombo = getDisplayCombo(player.comboCount, player.lastComboAt)
+
   return (
     <>
     <section className="mx-auto max-w-6xl">
@@ -369,7 +371,7 @@ function QuestsPage() {
           </span>
 
           <span className="font-bold text-cyan-400">
-            {player.comboCount}x
+            {displayCombo}x
           </span>
         </div>
 
