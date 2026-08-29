@@ -1,4 +1,6 @@
 import type { Player } from '../types/player'
+import AvatarDisplay from './AvatarDisplay'
+import { getCurrentTitle } from '../lib/titles'
 
 type PlayerCardProps = {
   player: Player
@@ -6,16 +8,20 @@ type PlayerCardProps = {
 
 function PlayerCard({ player }: PlayerCardProps) {
   const xpPercentage = (player.currentXp / player.xpToNextLevel) * 100
+  // Phase 5.4: the displayed title is always computed fresh from level
+  // via the title ladder, not read from the static profiles.title
+  // column (which only ever held its onboarding default and never
+  // updated). This is what makes titles actually "unlock from
+  // milestones" instead of being a fixed piece of text forever.
+  const currentTitle = getCurrentTitle(player.level)
 
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-2xl">
-          🧙
-        </div>
+        <AvatarDisplay avatarSex={player.avatarSex} />
 
         <div>
-          <p className="text-sm text-cyan-400">{player.title}</p>
+          <p className="text-sm text-cyan-400">{currentTitle.name}</p>
           <h2 className="text-2xl font-bold">{player.name}</h2>
         </div>
       </div>

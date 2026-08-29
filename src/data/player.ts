@@ -12,4 +12,5 @@ export const player: Player = {
   lastStreakDate: null,
   comboCount: 0,
   lastComboAt: null,
+  avatarSex: 'male',
 }

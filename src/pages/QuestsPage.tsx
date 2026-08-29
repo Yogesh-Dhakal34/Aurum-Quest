@@ -12,11 +12,13 @@ import {
   getTodaysQuests,
 } from '../services/questService'
 import { checkAndUnlockAchievements } from '../services/achievementService'
+import { getCharacterStats, applyQuestStatGains } from '../services/characterService'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 import type { AchievementDefinition } from '../types/achievement'
+import type { CharacterStats } from '../types/character'
 import { useEffect, useState } from 'react'
 
 function QuestsPage() {
@@ -24,6 +26,12 @@ function QuestsPage() {
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [quests, setQuests] = useState<Quest[]>([])
+  // Phase 5.2/5.3: loaded alongside player/quests so a stat gain can be
+  // applied and persisted in the same completion flow, without an extra
+  // round trip inside handleCompleteQuest itself.
+  const [characterStats, setCharacterStats] = useState<CharacterStats | null>(
+    null,
+  )
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
   // Set to the new level number when a completion crosses a level
   // threshold; null means no overlay should show. Deliberately separate
@@ -67,9 +75,10 @@ function QuestsPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedQuests] = await Promise.all([
+        const [loadedPlayer, loadedQuests, loadedStats] = await Promise.all([
           getPlayer(currentUser.id),
           getTodaysQuests(currentUser.id),
+          getCharacterStats(currentUser.id),
         ])
 
         if (cancelled) return
@@ -87,6 +96,12 @@ function QuestsPage() {
 
         setPlayer(loadedPlayer)
         setQuests(loadedQuests)
+        // A null character_stats row is not fatal here the way a null
+        // player is — LegendPage/stat gains simply won't have anything
+        // to show/apply until it exists, same tolerant handling as a
+        // missing avatar. completeOnboarding creates this row for every
+        // new user, so null should only occur for pre-Phase-5 accounts.
+        setCharacterStats(loadedStats)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -311,6 +326,28 @@ function QuestsPage() {
       // perspective, a successful quest completion. Nothing to roll
       // back: unlocking is additive and re-checked on the next
       // completion anyway.
+    }
+
+    // Phase 5.3: apply the mapped stat gains for this quest's category
+    // and difficulty. Same isolation pattern as the achievements check
+    // above — its own try/catch, wrapped separately from XP/streak, so
+    // a stats-write failure never blocks or rolls back a completion the
+    // player already earned. Skipped entirely if characterStats hasn't
+    // loaded (pre-Phase-5 account with no row yet) rather than throwing.
+    if (characterStats) {
+      try {
+        const nextStats = await applyQuestStatGains(
+          user.id,
+          characterStats,
+          quest.category,
+          quest.difficulty,
+        )
+        setCharacterStats(nextStats)
+      } catch {
+        // Same rationale as the achievements catch above: a stats-write
+        // failure is not something the player should see as an error on
+        // an otherwise-successful quest completion.
+      }
     }
 
     setPendingQuestIds((current) => {

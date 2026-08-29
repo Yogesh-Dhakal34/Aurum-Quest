@@ -112,4 +112,21 @@ export async function completeOnboarding(
   })
 
   if (stateError) throw toReadableError(stateError)
+
+  // Phase 5.2: every user gets a character_stats row created at
+  // onboarding, all six stats starting at 0 — same "create the full set
+  // of rows a fresh account needs" pattern as player_state above, so
+  // there's never a state where a signed-in, onboarded user is missing
+  // stats and characterService has to handle a null case downstream.
+  const { error: statsError } = await supabase.from('character_stats').upsert({
+    user_id: userId,
+    strength: 0,
+    knowledge: 0,
+    discipline: 0,
+    health: 0,
+    focus: 0,
+    creativity: 0,
+  })
+
+  if (statsError) throw toReadableError(statsError)
 }

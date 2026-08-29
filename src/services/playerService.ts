@@ -26,6 +26,7 @@ type ProfileRow = {
   name: string
   title: string
   avatar_url: string | null
+  avatar_sex: 'male' | 'female'
 }
 
 function toPlayer(profile: ProfileRow, state: PlayerStateRow): Player {
@@ -42,6 +43,7 @@ function toPlayer(profile: ProfileRow, state: PlayerStateRow): Player {
     comboCount: state.combo_count,
     lastComboAt: state.last_combo_at,
     avatarUrl: profile.avatar_url ?? undefined,
+    avatarSex: profile.avatar_sex,
   }
 }
 
@@ -59,7 +61,7 @@ export async function getPlayer(userId: string): Promise<Player | null> {
     await Promise.all([
       supabase
         .from('profiles')
-        .select('id, name, title, avatar_url')
+        .select('id, name, title, avatar_url, avatar_sex')
         .eq('id', userId)
         .maybeSingle(),
       supabase
