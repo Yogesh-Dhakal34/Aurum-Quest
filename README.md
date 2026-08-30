@@ -6,8 +6,8 @@
 
 A **gamified personal productivity application** — real-world actions become quests, quests earn XP, XP builds a persistent character and world.
 
-[![Version](https://img.shields.io/badge/version-v0.3.0-8A2BE2?style=for-the-badge)](#-versioning)
-[![Phase](https://img.shields.io/badge/phase-3%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![Version](https://img.shields.io/badge/version-v0.5.0-8A2BE2?style=for-the-badge)](#-versioning)
+[![Phase](https://img.shields.io/badge/phase-5%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
 
@@ -21,16 +21,16 @@ A **gamified personal productivity application** — real-world actions become q
 
 | | |
 |---|---|
-| **Version** | `v0.3.0` |
-| **Phase** | 3 — Backend & Data Architecture *(complete)* |
-| **Next** | 4 — Gamification Engine |
+| **Version** | `v0.5.0` |
+| **Phase** | 5 — Character System *(complete)* |
+| **Next** | 6 — Realm Progression |
 
 ```
    OPEN → SIGN IN → TODAY'S QUESTS → COMPLETE QUEST →
-   EARN XP → SYNCED TO SUPABASE → TRACK PROGRESS
+   EARN XP, STATS, SKILLS → SYNCED TO SUPABASE → BUILD YOUR LEGEND
 ```
 
-Aurum Quest is now a **real multi-user app** — accounts, cloud-synced progress, and row-level-secured data, not just a local prototype.
+Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement engine, and a persistent character with stats, skills, and titles that grow from what you actually do.
 
 <br>
 
@@ -40,7 +40,7 @@ Aurum Quest is now a **real multi-user app** — accounts, cloud-synced progress
 
 <table>
 <tr>
-<td width="33%" valign="top">
+<td width="25%" valign="top">
 
 ### 🔐 Your Account
 - Sign up / sign in / sign out
@@ -49,21 +49,29 @@ Aurum Quest is now a **real multi-user app** — accounts, cloud-synced progress
 - Your data, and only yours (RLS)
 
 </td>
-<td width="33%" valign="top">
+<td width="25%" valign="top">
 
 ### ⚔️ Quests
 - Daily quests by category
 - Single & multi-session quests
-- Combo multiplier on consecutive completions
+- Combo multiplier, capped at 1.5x
 - Duplicate-click safe — no double XP
 
 </td>
-<td width="33%" valign="top">
+<td width="25%" valign="top">
 
 ### 📈 Progress
 - Level, XP, and streak — cloud-synced
-- Daily completion tracking
+- Achievements unlocked from real milestones
 - Survives refresh, reopen, *and* device change
+
+</td>
+<td width="25%" valign="top">
+
+### 🧙 Legend
+- Avatar, current title, level
+- 6 character stats, 8 skills
+- Every gain traces to a real quest — nothing is grindable through empty clicks
 
 </td>
 </tr>
@@ -94,7 +102,7 @@ Aurum Quest is now a **real multi-user app** — accounts, cloud-synced progress
 React UI  →  Domain Services  →  Supabase Client  →  PostgreSQL
 ```
 
-Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`), which keeps the backend swappable and page components small.
+Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`, `characterService`, `skillService`, `achievementService`), which keeps the backend swappable and page components small. Game-math logic (XP/level/combo/streak, stat mapping, skill mapping, title ladder) lives in pure, dependency-free `lib/` modules — no Supabase calls, no React — so the rules themselves are directly testable.
 
 ```
 src/
@@ -103,7 +111,7 @@ src/
 ├── hooks/        React state (useAuth, usePersistentState)
 ├── services/     Domain operations ← Supabase lives here
 ├── context/       Auth session
-├── lib/          Infrastructure (date, storage, supabase client)
+├── lib/          Infrastructure + pure game logic (date, storage, supabase client, xp, stats, skills, titles)
 └── types/        Shared contracts
 ```
 
@@ -140,24 +148,40 @@ npm run lint     # code quality check
 | 0 — Environment & Initialization | ✅ | — |
 | 1 — Opening Experience + App Shell | ✅ | `v0.1.0` |
 | 2 — Progression & Local Persistence | ✅ | `v0.2.0` |
-| **3 — Backend & Data Architecture** | ✅ | `v0.3.0` |
-| 4 — Gamification Engine | 🔜 Next | `v0.4.0` |
-| 5 — Character System | ⬜ | `v0.5.0` |
-| 6 — Realm Progression | ⬜ | `v0.6.0` |
+| 3 — Backend & Data Architecture | ✅ | `v0.3.0` |
+| 4 — Gamification Engine | ✅ | `v0.4.0` |
+| **5 — Character System** | ✅ | `v0.5.0` |
+| 6 — Realm Progression | 🔜 Next | `v0.6.0` |
 | 7+ — Analytics, PWA, AI, Public Beta | ⬜ | — |
 
 *(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
 <details>
-<summary><strong>What Phase 3 actually delivered</strong></summary>
+<summary><strong>What Phase 4 actually delivered</strong></summary>
 
 <br>
 
-- Supabase auth: sign up, sign in, sign out, session persistence
-- 5-table PostgreSQL schema with Row Level Security on every table
-- Service layer separating UI from database calls
-- Real onboarding flow for new users
-- 3 real bugs found and fixed during testing (missing GRANTs, a leftover unique constraint, a click-race condition) — see [`DEV_JOURNAL.md`](DEV_JOURNAL.md) for the full incident writeups
+- Centralized, pure XP/level/combo/streak math (`lib/xp.ts`)
+- Level-up overlay with celebratory full-screen treatment
+- Combo system redesigned to a 2-hour resetting window with a 1.5x cap, after the original 24-hour rolling window proved unbounded
+- Real streak tracking — current + longest streak, GMT-anchored
+- 6 starting achievements, unlocked from real milestones, with toast notifications
+- See [`DEV_JOURNAL.md`](DEV_JOURNAL.md) for the full incident writeup
+
+</details>
+
+<details>
+<summary><strong>What Phase 5 actually delivered</strong></summary>
+
+<br>
+
+- Avatar selection — predefined male/female SVG presets, consistent across devices (no emoji rendering variance)
+- 6 character stats, persisted per user, gained only through matching quest completions
+- Category → stat mapping, difficulty-scaled gains (Easy/Medium/Hard → +1/+2/+3)
+- 5-tier, level-gated title ladder (Novice Adventurer → Aurum Vanguard)
+- 8-skill system, category-mapped
+- Real `LegendPage` — avatar, title, level, all stats and skills each with a plain-language explanation of what raises them
+- 2 real bugs found and fixed (an `avatarSex` field collected at onboarding but never displayed; a DB-vs-Git migration drift affecting several earlier tables) — see [`DEV_JOURNAL.md`](DEV_JOURNAL.md)
 
 </details>
 
@@ -168,16 +192,14 @@ npm run lint     # code quality check
 ## 🔮 Future Direction
 
 ```
-        QUESTS · PROGRESS · ACHIEVEMENTS
-                      │
-               PLAYER SYSTEM
+        QUESTS · PROGRESS · ACHIEVEMENTS · CHARACTER
                       │
                PERSONAL REALM
                       │
               IMMERSIVE WORLD
 ```
 
-Achievements, character stats, realm progression, analytics, and an optional AI companion are planned and sequenced in the project's separate planning docs.
+Realm progression, analytics, and an optional AI companion are planned and sequenced in the project's separate planning docs. A more granular per-quest skill mapping (beyond Phase 5.5's category-level version) is an open idea for revisiting after initial ship.
 
 <br>
 
