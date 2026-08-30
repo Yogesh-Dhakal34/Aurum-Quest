@@ -129,4 +129,19 @@ export async function completeOnboarding(
   })
 
   if (statsError) throw toReadableError(statsError)
+
+  // Phase 5.5: same pattern, for character_skills.
+  const { error: skillsError } = await supabase.from('character_skills').upsert({
+    user_id: userId,
+    study: 0,
+    writing: 0,
+    communication: 0,
+    fitness: 0,
+    reading: 0,
+    learning: 0,
+    problem_solving: 0,
+    design: 0,
+  })
+
+  if (skillsError) throw toReadableError(skillsError)
 }

@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { getPlayer } from '../services/playerService'
 import { getCharacterStats } from '../services/characterService'
+import { getCharacterSkills } from '../services/skillService'
 import { STAT_MAPPING } from '../lib/stats'
+import { SKILL_MAPPING } from '../lib/skills'
 import { getCurrentTitle, getNextTitle } from '../lib/titles'
 import { xpForLevel } from '../lib/xp'
 import AvatarDisplay from '../components/AvatarDisplay'
 import type { Player } from '../types/player'
 import type { CharacterStats, StatName } from '../types/character'
+import type { CharacterSkills, SkillName } from '../types/skill'
 import type { QuestCategory } from '../types/quest'
 
 const STAT_LABELS: Record<StatName, string> = {
@@ -28,6 +31,39 @@ const STAT_ORDER: StatName[] = [
   'creativity',
 ]
 
+const SKILL_LABELS: Record<SkillName, string> = {
+  study: 'Study',
+  writing: 'Writing',
+  communication: 'Communication',
+  fitness: 'Fitness',
+  reading: 'Reading',
+  learning: 'Learning',
+  problemSolving: 'Problem Solving',
+  design: 'Design',
+}
+
+const SKILL_ORDER: SkillName[] = [
+  'study',
+  'writing',
+  'communication',
+  'fitness',
+  'reading',
+  'learning',
+  'problemSolving',
+  'design',
+]
+
+/**
+ * Reverse of SKILL_MAPPING (lib/skills.ts): for a given skill, which
+ * quest categories raise it. Same derived-not-hand-maintained rationale
+ * as categoriesForStat below.
+ */
+function categoriesForSkill(skill: SkillName): QuestCategory[] {
+  return (Object.keys(SKILL_MAPPING) as QuestCategory[]).filter((category) =>
+    SKILL_MAPPING[category].includes(skill),
+  )
+}
+
 /**
  * Reverse of STAT_MAPPING (lib/stats.ts): for a given stat, which quest
  * categories raise it. Derived rather than hand-maintained, so this
@@ -44,6 +80,7 @@ function LegendPage() {
   const { user } = useAuth()
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<CharacterStats | null>(null)
+  const [skills, setSkills] = useState<CharacterSkills | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -58,15 +95,17 @@ function LegendPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedStats] = await Promise.all([
+        const [loadedPlayer, loadedStats, loadedSkills] = await Promise.all([
           getPlayer(currentUser.id),
           getCharacterStats(currentUser.id),
+          getCharacterSkills(currentUser.id),
         ])
 
         if (cancelled) return
 
         setPlayer(loadedPlayer)
         setStats(loadedStats)
+        setSkills(loadedSkills)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -149,6 +188,47 @@ function LegendPage() {
                     </span>
                     <span className="text-xl font-bold text-cyan-400">
                       {stats[stat]}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Raised by {categories.join(' and ')} quests
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Phase 5.5: Skills, same shape as Stats above. */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold text-slate-200">Skills</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Mapped by category for now, same as stats — a more specific
+          per-quest mapping may come later.
+        </p>
+
+        {!skills ? (
+          <p className="mt-4 text-sm text-slate-500">
+            Your skills will appear here once your account finishes
+            onboarding.
+          </p>
+        ) : (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {SKILL_ORDER.map((skill) => {
+              const categories = categoriesForSkill(skill)
+
+              return (
+                <div
+                  key={skill}
+                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+                >
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-medium text-slate-200">
+                      {SKILL_LABELS[skill]}
+                    </span>
+                    <span className="text-xl font-bold text-cyan-400">
+                      {skills[skill]}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">

@@ -13,12 +13,14 @@ import {
 } from '../services/questService'
 import { checkAndUnlockAchievements } from '../services/achievementService'
 import { getCharacterStats, applyQuestStatGains } from '../services/characterService'
+import { getCharacterSkills, applyQuestSkillGains } from '../services/skillService'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
 import type { Quest } from '../types/quest'
 import type { AchievementDefinition } from '../types/achievement'
 import type { CharacterStats } from '../types/character'
+import type { CharacterSkills } from '../types/skill'
 import { useEffect, useState } from 'react'
 
 function QuestsPage() {
@@ -30,6 +32,10 @@ function QuestsPage() {
   // applied and persisted in the same completion flow, without an extra
   // round trip inside handleCompleteQuest itself.
   const [characterStats, setCharacterStats] = useState<CharacterStats | null>(
+    null,
+  )
+  // Phase 5.5: same rationale as characterStats above.
+  const [characterSkills, setCharacterSkills] = useState<CharacterSkills | null>(
     null,
   )
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
@@ -75,10 +81,11 @@ function QuestsPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedQuests, loadedStats] = await Promise.all([
+        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills] = await Promise.all([
           getPlayer(currentUser.id),
           getTodaysQuests(currentUser.id),
           getCharacterStats(currentUser.id),
+          getCharacterSkills(currentUser.id),
         ])
 
         if (cancelled) return
@@ -102,6 +109,8 @@ function QuestsPage() {
         // missing avatar. completeOnboarding creates this row for every
         // new user, so null should only occur for pre-Phase-5 accounts.
         setCharacterStats(loadedStats)
+        // Same tolerant null-handling as characterStats above.
+        setCharacterSkills(loadedSkills)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -347,6 +356,25 @@ function QuestsPage() {
         // Same rationale as the achievements catch above: a stats-write
         // failure is not something the player should see as an error on
         // an otherwise-successful quest completion.
+      }
+    }
+
+    // Phase 5.5: same isolation pattern as stats above — its own
+    // try/catch, independent of the stats write, so a skills-write
+    // failure never blocks XP, streak, achievements, or stats, and vice
+    // versa. Skipped if characterSkills hasn't loaded (pre-Phase-5.5
+    // account with no row yet).
+    if (characterSkills) {
+      try {
+        const nextSkills = await applyQuestSkillGains(
+          user.id,
+          characterSkills,
+          quest.category,
+          quest.difficulty,
+        )
+        setCharacterSkills(nextSkills)
+      } catch {
+        // Same rationale as stats/achievements: not user-facing.
       }
     }
 
