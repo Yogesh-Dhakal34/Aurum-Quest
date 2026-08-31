@@ -28,26 +28,47 @@ function toCharacterSkills(row: CharacterSkillsRow): CharacterSkills {
   }
 }
 
+const DEFAULT_SKILLS_ROW = {
+  study: 0,
+  writing: 0,
+  communication: 0,
+  fitness: 0,
+  reading: 0,
+  learning: 0,
+  problem_solving: 0,
+  design: 0,
+}
+
+const SKILLS_SELECT =
+  'user_id, study, writing, communication, fitness, reading, learning, problem_solving, design'
+
 /**
- * Loads the current user's character skills. Returns null if the row
- * doesn't exist yet — same "null means needs onboarding" convention as
- * getCharacterStats/getPlayer.
+ * Loads the current user's character skills. Self-healing — same
+ * rationale and pattern as characterService.getCharacterStats: create
+ * a default row on first read rather than returning a permanent null
+ * that needs a manual SQL backfill.
  */
 export async function getCharacterSkills(
   userId: string,
 ): Promise<CharacterSkills | null> {
   const { data, error } = await supabase
     .from('character_skills')
-    .select(
-      'user_id, study, writing, communication, fitness, reading, learning, problem_solving, design',
-    )
+    .select(SKILLS_SELECT)
     .eq('user_id', userId)
     .maybeSingle()
 
   if (error) throw error
-  if (!data) return null
+  if (data) return toCharacterSkills(data)
 
-  return toCharacterSkills(data)
+  const { data: created, error: healError } = await supabase
+    .from('character_skills')
+    .upsert({ user_id: userId, ...DEFAULT_SKILLS_ROW })
+    .select(SKILLS_SELECT)
+    .maybeSingle()
+
+  if (healError || !created) return null
+
+  return toCharacterSkills(created)
 }
 
 /**

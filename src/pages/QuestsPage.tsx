@@ -14,6 +14,9 @@ import {
 import { checkAndUnlockAchievements } from '../services/achievementService'
 import { getCharacterStats, applyQuestStatGains } from '../services/characterService'
 import { getCharacterSkills, applyQuestSkillGains } from '../services/skillService'
+import { getLastAcknowledgedTier, acknowledgeTier } from '../services/realmService'
+import { getCurrentTier, type RealmTier } from '../lib/realm'
+import RealmUnlockOverlay from '../components/RealmUnlockOverlay'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
@@ -36,6 +39,24 @@ function QuestsPage() {
   )
   // Phase 5.5: same rationale as characterStats above.
   const [characterSkills, setCharacterSkills] = useState<CharacterSkills | null>(
+    null,
+  )
+  // Phase 6.2: the last realm tier whose unlock ceremony has been
+  // shown. Needed here (not just on RealmPage) so a tier crossed by a
+  // completion on THIS page can show its ceremony immediately, per
+  // ROADMAP.md's flow ("Reach requirement → Unlock → Watch World
+  // Change") rather than only on a later visit to Realm.
+  const [lastAcknowledgedTier, setLastAcknowledgedTier] = useState<
+    number | null
+  >(null)
+  // Set to the tier definition when a completion crosses a realm
+  // threshold; null means no ceremony should show. Separate from
+  // levelUpTo below — a level-up and a realm unlock are two distinct
+  // full-screen moments (UI_GUIDELINE.md lists them separately), and in
+  // the rare case both fire from the same completion, the realm
+  // ceremony is shown after the level-up overlay is dismissed, not
+  // simultaneously.
+  const [realmCeremonyTier, setRealmCeremonyTier] = useState<RealmTier | null>(
     null,
   )
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
@@ -81,12 +102,14 @@ function QuestsPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills] = await Promise.all([
-          getPlayer(currentUser.id),
-          getTodaysQuests(currentUser.id),
-          getCharacterStats(currentUser.id),
-          getCharacterSkills(currentUser.id),
-        ])
+        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills, loadedTier] =
+          await Promise.all([
+            getPlayer(currentUser.id),
+            getTodaysQuests(currentUser.id),
+            getCharacterStats(currentUser.id),
+            getCharacterSkills(currentUser.id),
+            getLastAcknowledgedTier(currentUser.id),
+          ])
 
         if (cancelled) return
 
@@ -105,12 +128,15 @@ function QuestsPage() {
         setQuests(loadedQuests)
         // A null character_stats row is not fatal here the way a null
         // player is — LegendPage/stat gains simply won't have anything
-        // to show/apply until it exists, same tolerant handling as a
-        // missing avatar. completeOnboarding creates this row for every
-        // new user, so null should only occur for pre-Phase-5 accounts.
+        // to show/apply until it exists. As of the self-heal fix,
+        // getCharacterStats now creates a default row on first read
+        // when one's missing, so null here should only mean a
+        // transient failure on that self-heal attempt, not a
+        // permanent pre-existing-account gap.
         setCharacterStats(loadedStats)
         // Same tolerant null-handling as characterStats above.
         setCharacterSkills(loadedSkills)
+        setLastAcknowledgedTier(loadedTier)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -175,6 +201,21 @@ function QuestsPage() {
     },
     {},
   )
+
+  async function handleDismissRealmCeremony() {
+    if (!user || !realmCeremonyTier) return
+
+    const tierToAcknowledge = realmCeremonyTier.tier
+    setRealmCeremonyTier(null)
+
+    try {
+      await acknowledgeTier(user.id, tierToAcknowledge)
+      setLastAcknowledgedTier(tierToAcknowledge)
+    } catch {
+      // Non-fatal, same rationale as RealmPage's equivalent handler:
+      // worst case the ceremony is offered again later, never blocking.
+    }
+  }
 
   const handleCompleteQuest = async (questId: string) => {
     if (!user || !player) return
@@ -378,6 +419,23 @@ function QuestsPage() {
       }
     }
 
+    // Phase 6.2: check for a realm tier crossing using the same
+    // `player.currentXp + earnedXp` expression already used for
+    // xpTotal above — `player` in state hasn't re-rendered with the
+    // new value yet inside this same function call, so reading
+    // `player.currentXp` again here would still see the stale number.
+    // Not wrapped in the same try/catch pattern as stats/skills above:
+    // getCurrentTier is a pure local function with no network call, so
+    // there's nothing here that can actually throw.
+    if (lastAcknowledgedTier !== null) {
+      const newTotalXp = player.currentXp + earnedXp
+      const newTier = getCurrentTier(newTotalXp)
+
+      if (newTier.tier > lastAcknowledgedTier) {
+        setRealmCeremonyTier(newTier)
+      }
+    }
+
     setPendingQuestIds((current) => {
       const next = new Set(current)
       next.delete(questId)
@@ -534,6 +592,19 @@ function QuestsPage() {
         <LevelUpOverlay
           newLevel={levelUpTo}
           onDismiss={() => setLevelUpTo(null)}
+        />
+      )}
+    </AnimatePresence>
+
+    {/* Gated on levelUpTo === null: if a single completion crosses both
+        a level AND a realm tier, the level-up overlay shows first —
+        the realm ceremony waits until it's dismissed rather than
+        stacking two full-screen moments at once. */}
+    <AnimatePresence>
+      {levelUpTo === null && realmCeremonyTier !== null && (
+        <RealmUnlockOverlay
+          tier={realmCeremonyTier}
+          onDismiss={handleDismissRealmCeremony}
         />
       )}
     </AnimatePresence>

@@ -24,14 +24,26 @@ function toCharacterStats(row: CharacterStatsRow): CharacterStats {
   }
 }
 
+const DEFAULT_STATS_ROW = {
+  strength: 0,
+  knowledge: 0,
+  discipline: 0,
+  health: 0,
+  focus: 0,
+  creativity: 0,
+}
+
 /**
- * Loads the current user's character stats.
- *
- * Returns `null` if the row doesn't exist yet — same convention as
- * playerService.getPlayer: treat `null` as "needs onboarding," not as
- * an error. In practice this shouldn't happen post-onboarding, since
- * completeOnboarding creates the row, but callers should still handle
- * it rather than assume.
+ * Loads the current user's character stats. Self-healing: if no row
+ * exists (an account that predates this migration, or any future gap
+ * of the same shape), creates one with default values right here
+ * instead of returning null and requiring a manual SQL backfill —
+ * fixed after this was hit for real with character_stats, then again
+ * with character_skills and realm_state, all needing the same manual
+ * fix. Still returns null in the rare case the self-heal insert itself
+ * fails (e.g. a network error at that exact moment), so callers keep
+ * the same null-handling contract as before — this only removes the
+ * *permanent* gap, not error handling.
  */
 export async function getCharacterStats(
   userId: string,
@@ -43,9 +55,17 @@ export async function getCharacterStats(
     .maybeSingle()
 
   if (error) throw error
-  if (!data) return null
+  if (data) return toCharacterStats(data)
 
-  return toCharacterStats(data)
+  const { data: created, error: healError } = await supabase
+    .from('character_stats')
+    .upsert({ user_id: userId, ...DEFAULT_STATS_ROW })
+    .select('user_id, strength, knowledge, discipline, health, focus, creativity')
+    .maybeSingle()
+
+  if (healError || !created) return null
+
+  return toCharacterStats(created)
 }
 
 /**

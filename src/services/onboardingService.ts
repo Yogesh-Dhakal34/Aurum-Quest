@@ -144,4 +144,13 @@ export async function completeOnboarding(
   })
 
   if (skillsError) throw toReadableError(skillsError)
+
+  // Phase 6.2: same pattern, for realm_state. Starts at tier 1 — the
+  // player begins at the Campfire, no unlock ceremony needed for it.
+  const { error: realmError } = await supabase.from('realm_state').upsert({
+    user_id: userId,
+    last_acknowledged_tier: 1,
+  })
+
+  if (realmError) throw toReadableError(realmError)
 }
