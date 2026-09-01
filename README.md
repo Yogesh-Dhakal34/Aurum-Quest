@@ -6,8 +6,8 @@
 
 A **gamified personal productivity application** — real-world actions become quests, quests earn XP, XP builds a persistent character and world.
 
-[![Version](https://img.shields.io/badge/version-v0.5.0-8A2BE2?style=for-the-badge)](#-versioning)
-[![Phase](https://img.shields.io/badge/phase-5%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![Version](https://img.shields.io/badge/version-v0.6.0-8A2BE2?style=for-the-badge)](#-versioning)
+[![Phase](https://img.shields.io/badge/phase-6%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
 
@@ -21,16 +21,16 @@ A **gamified personal productivity application** — real-world actions become q
 
 | | |
 |---|---|
-| **Version** | `v0.5.0` |
-| **Phase** | 5 — Character System *(complete)* |
-| **Next** | 6 — Realm Progression |
+| **Version** | `v0.6.0` |
+| **Phase** | 6 — Realm Progression *(complete)* |
+| **Next** | 7 — Progress Intelligence |
 
 ```
    OPEN → SIGN IN → TODAY'S QUESTS → COMPLETE QUEST →
    EARN XP, STATS, SKILLS → SYNCED TO SUPABASE → BUILD YOUR LEGEND
 ```
 
-Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement engine, and a persistent character with stats, skills, and titles that grow from what you actually do.
+Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement engine, a persistent character with stats/skills/titles, and a realm that visibly grows with lifetime progress.
 
 <br>
 
@@ -40,7 +40,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 
 <table>
 <tr>
-<td width="25%" valign="top">
+<td width="20%" valign="top">
 
 ### 🔐 Your Account
 - Sign up / sign in / sign out
@@ -49,7 +49,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Your data, and only yours (RLS)
 
 </td>
-<td width="25%" valign="top">
+<td width="20%" valign="top">
 
 ### ⚔️ Quests
 - Daily quests by category
@@ -58,7 +58,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Duplicate-click safe — no double XP
 
 </td>
-<td width="25%" valign="top">
+<td width="20%" valign="top">
 
 ### 📈 Progress
 - Level, XP, and streak — cloud-synced
@@ -66,12 +66,20 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Survives refresh, reopen, *and* device change
 
 </td>
-<td width="25%" valign="top">
+<td width="20%" valign="top">
 
 ### 🧙 Legend
 - Avatar, current title, level
 - 6 character stats, 8 skills
 - Every gain traces to a real quest — nothing is grindable through empty clicks
+
+</td>
+<td width="20%" valign="top">
+
+### 🏰 Realm
+- 7-tier world, keyed off lifetime XP
+- Unlock ceremony on reaching a new tier
+- Progress-to-next-tier always visible
 
 </td>
 </tr>
@@ -102,7 +110,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 React UI  →  Domain Services  →  Supabase Client  →  PostgreSQL
 ```
 
-Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`, `characterService`, `skillService`, `achievementService`), which keeps the backend swappable and page components small. Game-math logic (XP/level/combo/streak, stat mapping, skill mapping, title ladder) lives in pure, dependency-free `lib/` modules — no Supabase calls, no React — so the rules themselves are directly testable.
+Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`, `characterService`, `skillService`, `achievementService`, `realmService`), which keeps the backend swappable and page components small. Game-math logic (XP/level/combo/streak, stat mapping, skill mapping, title ladder, realm tiers) lives in pure, dependency-free `lib/` modules — no Supabase calls, no React — so the rules themselves are directly testable.
 
 ```
 src/
@@ -150,9 +158,10 @@ npm run lint     # code quality check
 | 2 — Progression & Local Persistence | ✅ | `v0.2.0` |
 | 3 — Backend & Data Architecture | ✅ | `v0.3.0` |
 | 4 — Gamification Engine | ✅ | `v0.4.0` |
-| **5 — Character System** | ✅ | `v0.5.0` |
-| 6 — Realm Progression | 🔜 Next | `v0.6.0` |
-| 7+ — Analytics, PWA, AI, Public Beta | ⬜ | — |
+| 5 — Character System | ✅ | `v0.5.0` |
+| **6 — Realm Progression** | ✅ | `v0.6.0` |
+| 7 — Progress Intelligence | 🔜 Next | `v0.7.0` |
+| 8+ — Audio/PWA, AI, Public Beta | ⬜ | — |
 
 *(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
@@ -185,6 +194,20 @@ npm run lint     # code quality check
 
 </details>
 
+<details>
+<summary><strong>What Phase 6 actually delivered</strong></summary>
+
+<br>
+
+- 7-tier realm (Campfire → Sky Citadel), keyed off lifetime XP — real map, current building, world backdrop
+- Unlock ceremony shown immediately on tier crossing, sequenced after a level-up overlay if both fire from the same completion, with a safety-net check on the Realm page in case it's ever missed
+- Progress-to-next-tier bar, always visible without navigating elsewhere
+- 6.3 (Construction Choices) and 6.5 (World State) deliberately deferred — both explicitly Stretch in the spec, and both need a game-mechanics decision that isn't specified yet
+- A pre-existing XP-bar display bug (found while scoping this phase, unrelated to Realm itself) fixed in the same pass
+- The root cause behind 3 separate "missing row" bugs across Phases 5–6 fixed once, generally — `character_stats`, `character_skills`, and `realm_state` all now self-heal a default row on first read instead of needing a manual SQL backfill — see [`DEV_JOURNAL.md`](DEV_JOURNAL.md)
+
+</details>
+
 <br>
 
 ---
@@ -192,14 +215,14 @@ npm run lint     # code quality check
 ## 🔮 Future Direction
 
 ```
-        QUESTS · PROGRESS · ACHIEVEMENTS · CHARACTER
+        QUESTS · PROGRESS · ACHIEVEMENTS · CHARACTER · REALM
                       │
-               PERSONAL REALM
+              PROGRESS INTELLIGENCE
                       │
-              IMMERSIVE WORLD
+           ATMOSPHERE · AI · PUBLIC BETA
 ```
 
-Realm progression, analytics, and an optional AI companion are planned and sequenced in the project's separate planning docs. A more granular per-quest skill mapping (beyond Phase 5.5's category-level version) is an open idea for revisiting after initial ship.
+Progress analytics, audio/PWA polish, and an optional AI companion are planned and sequenced in the project's separate planning docs. Open items: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5) — both need a product decision, not just more code. A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided.
 
 <br>
 

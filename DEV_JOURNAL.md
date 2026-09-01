@@ -20,7 +20,8 @@
 | 3 | Backend & Data Architecture | ✅ |
 | 4 | Gamification Engine | ✅ |
 | 5 | Character System | ✅ |
-| 6 | Realm Progression | ⬜ Next |
+| 6 | Realm Progression | ✅ |
+| 7 | Progress Intelligence | ⬜ Next |
 
 <br>
 
@@ -208,6 +209,46 @@ Discovered while validating the stat mapping: `quest_definitions` had quests for
 
 ---
 
+## Phase 6 — Realm Progression
+
+**Goal:** make consistency visible — a personal world that grows in visible, discrete steps as lifetime XP accumulates, so a player can look at it for five seconds and understand roughly how far they've come.
+
+### What shipped
+
+| Sub-phase | What shipped |
+|---|---|
+| 6.1 Realm Map | `lib/realm.ts` — pure 7-tier data (Campfire → Sky Citadel) keyed off lifetime XP, `getCurrentTier`/`getNextTier`/`getRealmProgress`; real `RealmPage.tsx` with world backdrop, current building, and a correct progress-to-next-tier bar |
+| 6.2 Unlock Animation | `realm_state` table (tracks last-acknowledged tier), `realmService.ts`, `RealmUnlockOverlay.tsx` — modeled directly on the existing `LevelUpOverlay`; shown immediately on tier crossing during quest completion, with a safety-net check on Realm page load in case the ceremony was missed (tab closed mid-animation, navigated away, etc.) |
+| 6.4 Buildings With Meaning | Each of the 7 tiers ties to a named building with a short blurb connecting it to consistency/habit-building as a whole — deliberately not a literal per-stat mapping, since the roadmap's tier table names (Campfire, Chicken Coop, Herb Garden...) don't correspond to any specific stat/skill category |
+
+Sequencing: if a single quest completion crosses both a level and a realm tier at once, the level-up overlay shows first — the realm ceremony waits until it's dismissed rather than stacking two full-screen moments simultaneously.
+
+**Deliberately deferred — 6.3 (Construction Choices) and 6.5 (World State):** both explicitly Stretch per `ROADMAP.md`'s own MVP cut line, and both need a real design decision that isn't specified anywhere (6.3: what does picking "Blacksmith" over "Observatory" actually *change*, mechanically? 6.5: most of what it asks for — current tier, streak, achievements — already has a home elsewhere in the app, so building it into the realm scene too would mostly duplicate existing UI for comparatively low payoff). Not a scope cut made silently — flagged and confirmed before skipping.
+
+### 🔴 Incident 1 — Broken XP progress bar (pre-existing, found while scoping this phase)
+
+**Symptom:** `PlayerCard`'s XP bar percentage was wrong for any player past level 1 — not part of Phase 6, but found while confirming that `player_state.current_xp` was safe to use as Realm's lifetime-XP input.
+
+**Cause:** `current_xp` genuinely stores lifetime cumulative XP (confirmed via `player.currentXp + earnedXp`, which only ever grows) — good news for Realm. But `xp_to_next_level` stores the *size of the current level's XP span* (e.g. ~237 XP), not a cumulative threshold. The bar computed `currentXp ÷ xpToNextLevel`, dividing an ever-growing cumulative number by a small per-level span.
+
+**Fix:** `PlayerCard` now derives `xpInLevel`/`xpToNextLevel` fresh from `levelFromXp(player.currentXp)` at render time instead of trusting the stored, mismatched value — same "recompute, don't trust stored" approach already used for the title ladder.
+
+### 🔴 Incident 2 — Same missing-row gap, a third time — fixed at the root
+
+**Symptom:** after this phase shipped, a real tier crossing (Campfire → Chicken Coop) produced no unlock ceremony — the tier changed silently, only visible by checking the Realm page directly.
+
+**Cause:** the account predated the `realm_state` migration, so `getLastAcknowledgedTier` returned `null`, and both the completion-time check and the Realm page's safety-net check were written to tolerantly skip on `null` — silently disabling the feature entirely for any pre-existing account. This was the *third* time this exact gap shape appeared (`character_stats` in 5.2, `character_skills` in 5.5, now `realm_state`), each requiring a one-off manual SQL backfill.
+
+**Fix, this time at the root instead of patched per-table:** `getCharacterStats`, `getCharacterSkills`, and `getLastAcknowledgedTier` are now self-healing — if a row doesn't exist, each creates one with defaults on that same read, rather than returning a permanent `null`. `getLastAcknowledgedTier` specifically heals to tier `1`, not the player's actual current tier, so a player who'd already progressed further still gets the ceremony they're owed the next time the check runs, instead of it being silently marked as already-seen.
+
+**Lesson:** the recurring shape here wasn't "forgot a backfill" three separate times — it was a missing general pattern (self-healing reads for any per-user row-on-signup table). Any future table of this shape should be built self-healing from the start, not patched reactively after the third occurrence.
+
+**Result: PASS** · Release `v0.6.0`
+
+<br>
+
+---
+
 ## 🧠 Development Philosophy
 
 ```
@@ -235,8 +276,8 @@ git add . && git commit -m "..." && git push
 
 ## 🔮 Future Phases (not yet started)
 
-Realm progression · Progress analytics · Audio/PWA · AI companion · Public beta
+Progress analytics · Audio/PWA · AI companion · Public beta
 
-Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple — revisit after initial ship if more granularity is wanted).
+Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple), and Realm's 6.3/6.5 (construction choices, dynamic world state) — both need a product decision before they can be built, not just more code.
 
 Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.
