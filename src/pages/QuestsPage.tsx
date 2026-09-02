@@ -17,6 +17,9 @@ import { getCharacterSkills, applyQuestSkillGains } from '../services/skillServi
 import { getLastAcknowledgedTier, acknowledgeTier } from '../services/realmService'
 import { getCurrentTier, type RealmTier } from '../lib/realm'
 import RealmUnlockOverlay from '../components/RealmUnlockOverlay'
+import RankBadge from '../components/RankBadge'
+import { getDailyRank } from '../services/rankService'
+import type { RankResult } from '../lib/rank'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
@@ -59,6 +62,11 @@ function QuestsPage() {
   const [realmCeremonyTier, setRealmCeremonyTier] = useState<RealmTier | null>(
     null,
   )
+  // Phase 4.5: today's rank, recomputed after every completion (not
+  // just loaded once) since completion% / streak / combo can all
+  // change mid-session. Null while loading or before the first
+  // successful compute — RankBadge simply doesn't render then.
+  const [todaysRank, setTodaysRank] = useState<RankResult | null>(null)
   const [xpFeedback, setXpFeedback] = useState<number | null>(null)
   // Set to the new level number when a completion crosses a level
   // threshold; null means no overlay should show. Deliberately separate
@@ -102,13 +110,14 @@ function QuestsPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills, loadedTier] =
+        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills, loadedTier, loadedRank] =
           await Promise.all([
             getPlayer(currentUser.id),
             getTodaysQuests(currentUser.id),
             getCharacterStats(currentUser.id),
             getCharacterSkills(currentUser.id),
             getLastAcknowledgedTier(currentUser.id),
+            getDailyRank(currentUser.id, getGmtDateKey()),
           ])
 
         if (cancelled) return
@@ -137,6 +146,7 @@ function QuestsPage() {
         // Same tolerant null-handling as characterStats above.
         setCharacterSkills(loadedSkills)
         setLastAcknowledgedTier(loadedTier)
+        setTodaysRank(loadedRank)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -436,6 +446,21 @@ function QuestsPage() {
       }
     }
 
+    // Phase 4.5: recompute today's rank after this completion — the
+    // rank shown on the badge should reflect the moment right after
+    // completing, not go stale until a full page reload. Uses the
+    // same read-from-real-data function as the initial load and as
+    // Phase 7's historical views, so there's exactly one code path
+    // computing rank, live or retrospective.
+    try {
+      const updatedRank = await getDailyRank(user.id, getGmtDateKey())
+      setTodaysRank(updatedRank)
+    } catch {
+      // Non-fatal, same rationale as stats/skills/achievements above:
+      // the rank badge simply doesn't update this cycle, not a
+      // user-facing error on an otherwise-successful completion.
+    }
+
     setPendingQuestIds((current) => {
       const next = new Set(current)
       next.delete(questId)
@@ -543,6 +568,12 @@ function QuestsPage() {
   <p className="mt-2 text-xs text-slate-500">
     Complete today's quests to advance your progress.
   </p>
+
+  {todaysRank && (
+    <div className="mt-4 border-t border-slate-800 pt-4">
+      <RankBadge rank={todaysRank.rank} reason={todaysRank.reason} />
+    </div>
+  )}
 </div>
 </div>
 
