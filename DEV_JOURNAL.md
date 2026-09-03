@@ -21,7 +21,8 @@
 | 4 | Gamification Engine | ✅ |
 | 5 | Character System | ✅ |
 | 6 | Realm Progression | ✅ |
-| 7 | Progress Intelligence | ⬜ Next |
+| 7 | Progress Intelligence | ✅ |
+| 8 | Audio, Atmosphere & PWA | ⬜ Next |
 
 <br>
 
@@ -249,6 +250,67 @@ Sequencing: if a single quest completion crosses both a level and a realm tier a
 
 ---
 
+## Phase 4.5 — Rank System *(built retroactively, ahead of Phase 7)*
+
+**Goal:** a daily S/A/B/C/D/F rank, originally scoped as Phase 4 Stretch and skipped at the time. Built now because Phase 7's "highest rank frequency" personal record has no meaning without it.
+
+### Formula
+
+GAMEPLAY.md §11 explicitly requires the formula be defined and confirmed *before* implementation, not left implicit in code. Confirmed with the product owner across a few rounds of adjustment:
+
+```
+score = completionPercent (0-100)
+      + (streakMaintained ? 15 : 0)
+      + (comboAchieved ? 15 : 0)
+
+S ≥ 115   A ≥ 90   B ≥ 65   C ≥ 40   D ≥ 15   F < 15
+```
+
+Completion is the dominant factor — no rank-farming by clicking fast, only by actually finishing quests. Streak/combo are meaningful but bounded bonuses, same "bonus never dominates" principle already enforced for combo XP. S is deliberately hard to reach (100% completion alone only reaches A — you need a bonus too); F requires genuinely low effort, not just an imperfect day, matching the app's supportive-not-punishing tone.
+
+### What shipped
+
+`lib/rank.ts` (pure formula + combo-day derivation, replaying the existing 2-hour combo window logic across a day's completions rather than reimplementing it), `services/rankService.ts`, `components/RankBadge.tsx` — shown live on the Quests page (the actual Phase 4 placement per `UI_GUIDELINE.md`, not Progress), recomputed after every completion so it never goes stale mid-session.
+
+No new table: rank is fully derived from `quest_progress` + `quest_definitions` on every read, same "recompute, don't trust stored" discipline as titles and the XP bar fix above.
+
+**Result: PASS**
+
+<br>
+
+---
+
+## Phase 7 — Progress Intelligence
+
+**Goal:** turn historical records into decisions the player can actually act on — daily history, a weekly report, and personal records.
+
+### What shipped
+
+| Sub-phase | What shipped |
+|---|---|
+| Daily History | `lib/progress.ts`'s `aggregateByDay`, `services/progressService.ts`'s `getDailyBreakdown` — XP, completion count/rate, per-category unit totals, and that day's rank, for any date |
+| Weekly Report | `aggregateWeek` + `buildWeeklyReport` — total XP, average completion, best/weakest day, most-consistent/neglected category (by completion count, not XP — a category can be "neglected" even if its few completions were high-value), a composite score on the same 0-130 scale as daily rank, Wins/Weaknesses, and a computed Next-Week Focus |
+| Personal Records | `computePersonalRecords` — most XP in a day, highest per-category unit total in a day, rank frequency counts. Longest streak is passed in from `player_state` rather than re-derived, to avoid a second source of truth for a value that already exists correctly |
+| Optional Journal Note | `create_weekly_journal.sql` — the one genuinely new writable table this phase needed; everything else is derived, not stored |
+
+Real `ProgressPage.tsx` replacing the placeholder: a Daily/Weekly toggle on one page (not three separate pages, per `UI_GUIDELINE.md`), plus Personal Records shown underneath regardless of which view is active, since it's an all-time view, not tied to a specific period.
+
+### 🟡 Known gap — `daily_state` is dead code
+
+**Symptom:** `ROADMAP.md` explicitly says this phase would be fed by "Phase 2's daily snapshots (2.6) and Phase 3's cloud history" — while scoping, found that `daily_state` has a full migration and RLS policy but is never read or written anywhere in the actual application code. Confirmed via a full-codebase search — zero references outside the migration file itself.
+
+**Resolution:** did not resurrect it. `quest_progress` (which *is* real, actively written, and retains full history — confirmed via its `(user_id, quest_definition_id, date_key)` unique constraint, one row per quest per day, never overwritten) already carries everything this phase needs. Building on `daily_state` would have meant maintaining two sources of truth for the same information. Left as an open item — worth a decision on whether to drop the unused table in a later cleanup pass, not done unilaterally here since dropping schema is harder to reverse than adding it.
+
+### 🟡 Known gap — "Next week's focus" is the lightweight version only
+
+`ROADMAP.md` lists "Next week's focus" as part of the Core Weekly Report; `PHASE_ASSIGNMENTS.md` separately lists "next-week planning" under Stretch. Resolved as two different sizes of the same idea: the Core version shipped is a single computed suggestion (the week's most neglected category). A full interactive goal-setting/tracking flow — which would need real, currently-unspecified mechanics (freeform goal? selected from a list? tracked against next week how?) — stays deferred, same category of open design question as Realm's 6.3.
+
+**Result: PASS** · Release `v0.7.0`
+
+<br>
+
+---
+
 ## 🧠 Development Philosophy
 
 ```
@@ -276,8 +338,8 @@ git add . && git commit -m "..." && git push
 
 ## 🔮 Future Phases (not yet started)
 
-Progress analytics · Audio/PWA · AI companion · Public beta
+Audio/PWA · AI companion · Public beta
 
-Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple), and Realm's 6.3/6.5 (construction choices, dynamic world state) — both need a product decision before they can be built, not just more code.
+Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple); Realm's 6.3/6.5 (construction choices, dynamic world state); a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion — all three need a product decision before they can be built, not just more code. Also worth revisiting: whether `daily_state` should be dropped now that Phase 7 confirmed it's genuinely unused.
 
 Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.
