@@ -4,6 +4,7 @@ import QuestCard from '../components/QuestCard'
 import LevelUpOverlay from '../components/LevelUpOverlay'
 import AchievementToast from '../components/AchievementToast'
 import { useAuth } from '../hooks/useAuth'
+import { useSound } from '../hooks/useSound'
 import { getPlayer, updatePlayerProgress } from '../services/playerService'
 import type { UpdatePlayerProgressResult } from '../services/playerService'
 import {
@@ -31,6 +32,7 @@ import { useEffect, useState } from 'react'
 
 function QuestsPage() {
   const { user } = useAuth()
+  const { play } = useSound()
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [quests, setQuests] = useState<Quest[]>([])
@@ -356,9 +358,11 @@ function QuestsPage() {
       lastStreakDate: streakUpdate.lastStreakDate,
     })
     setXpFeedback(earnedXp)
+    play('questClaim')
 
     if (progressResult.leveledUp) {
       setLevelUpTo(progressResult.level)
+      play('levelUp')
     }
 
     // Phase 4.7: check achievements after every successful completion.
@@ -379,6 +383,7 @@ function QuestsPage() {
 
       if (newlyUnlocked.length > 0) {
         setUnlockedAchievements(newlyUnlocked)
+        play('achievement')
       }
     } catch {
       // Silently skip — an achievement-check failure should never
@@ -443,6 +448,7 @@ function QuestsPage() {
 
       if (newTier.tier > lastAcknowledgedTier) {
         setRealmCeremonyTier(newTier)
+        play('realmUnlock')
       }
     }
 

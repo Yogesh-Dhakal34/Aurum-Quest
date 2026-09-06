@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import type { View } from '../types/view'
+import OnlineIndicator from '../components/OnlineIndicator'
+import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 
 type AppShellProps = {
   children: ReactNode
@@ -22,10 +24,12 @@ function AppShell({
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <UpdateAvailableBanner />
       <header className="border-b border-slate-800">
-        <div className="px-6 py-4">
-            <h1 className="text-xl font-bold">Aurum Quest</h1>
-          </div>
+        <div className="flex items-center justify-between px-6 py-4">
+          <h1 className="text-xl font-bold">Aurum Quest</h1>
+          <OnlineIndicator />
+        </div>
 
           <nav className="flex gap-1 overflow-x-auto border-t border-slate-800 px-4 py-2 md:hidden">
             {navigationItems.map((item) => (

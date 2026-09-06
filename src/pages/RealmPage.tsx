@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useSound } from '../hooks/useSound'
 import { getPlayer } from '../services/playerService'
 import { getLastAcknowledgedTier, acknowledgeTier } from '../services/realmService'
 import { REALM_TIERS, getCurrentTier, getRealmProgress } from '../lib/realm'
@@ -103,6 +104,7 @@ function WorldBackdrop() {
 
 function RealmPage() {
   const { user } = useAuth()
+  const { play } = useSound()
   const [player, setPlayer] = useState<Player | null>(null)
   const [ceremonyTierNumber, setCeremonyTierNumber] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -137,6 +139,7 @@ function RealmPage() {
           const actualTier = getCurrentTier(loadedPlayer.currentXp).tier
           if (actualTier > loadedTier) {
             setCeremonyTierNumber(actualTier)
+            play('realmUnlock')
           }
         }
       } catch (error) {
@@ -154,7 +157,7 @@ function RealmPage() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, play])
 
   async function handleDismissCeremony() {
     if (!user || ceremonyTierNumber === null) return

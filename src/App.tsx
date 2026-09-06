@@ -11,8 +11,26 @@ import type { View } from './types/view'
 import { AnimatePresence } from 'motion/react'
 import OpeningExperience from './components/OpeningExperience'
 import { AuthProvider } from './context/AuthContext'
+import { SoundProvider } from './context/SoundContext'
 import { useAuth } from './hooks/useAuth'
 import { getOnboardingStatus } from './services/onboardingService'
+
+// Phase 8 performance pass: route-based code-splitting (React.lazy per
+// page) was tried here and deliberately reverted. On this project's
+// exact toolchain (Vite 8's new Rolldown bundler), it measured as a
+// net INCREASE in the main bundle — 199.56 KB eager vs 327.31 KB after
+// splitting, confirmed via a direct A/B build on this same codebase,
+// with no duplication in the split chunks (verified by grepping for
+// page-specific strings in the main bundle). This matches a known,
+// currently-open upstream issue (vitejs/vite#22007): Rolldown's
+// tree-shaking is less aggressive once dynamic imports are introduced,
+// so splitting can genuinely make things worse, not better, on this
+// specific bundler version. Shipping it would work against "fast
+// initial render," not for it — revisit once that upstream issue is
+// resolved, not before. The app is already small (this single ~200 KB
+// gzip-63 KB bundle) with no heavy binary assets (all icons/scenes are
+// inline SVG), which already satisfies most of this phase's
+// performance goals without needing splitting at this app's size.
 
 function AuthenticatedApp() {
   const [currentView, setCurrentView] = useState<View>('quests')
@@ -115,7 +133,11 @@ function OnboardingGate() {
     return <OnboardingPage onComplete={() => setStatus('completed')} />
   }
 
-  return <AuthenticatedApp />
+  return (
+    <SoundProvider>
+      <AuthenticatedApp />
+    </SoundProvider>
+  )
 }
 
 function AuthGate() {
