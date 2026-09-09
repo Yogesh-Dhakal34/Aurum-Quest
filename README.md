@@ -6,8 +6,8 @@
 
 A **gamified personal productivity application** — real-world actions become quests, quests earn XP, XP builds a persistent character and world.
 
-[![Version](https://img.shields.io/badge/version-v0.7.0-8A2BE2?style=for-the-badge)](#-versioning)
-[![Phase](https://img.shields.io/badge/phase-7%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![Version](https://img.shields.io/badge/version-v0.8.0-8A2BE2?style=for-the-badge)](#-versioning)
+[![Phase](https://img.shields.io/badge/phase-8%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
 
@@ -21,16 +21,16 @@ A **gamified personal productivity application** — real-world actions become q
 
 | | |
 |---|---|
-| **Version** | `v0.7.0` |
-| **Phase** | 7 — Progress Intelligence *(complete)* |
-| **Next** | 8 — Audio, Atmosphere & PWA |
+| **Version** | `v0.8.0` |
+| **Phase** | 8 — Audio, Atmosphere & PWA *(complete)* |
+| **Next** | 9 — AI Companion & Smart Planning |
 
 ```
    OPEN → SIGN IN → TODAY'S QUESTS → COMPLETE QUEST →
    EARN XP, STATS, SKILLS, RANK → REVIEW YOUR WEEK → BUILD YOUR LEGEND
 ```
 
-Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement/rank engine, a persistent character with stats/skills/titles, a realm that visibly grows with lifetime progress, and weekly reporting that turns history into an actual next step.
+Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement/rank engine, a persistent character with stats/skills/titles, a realm that visibly grows with lifetime progress, weekly reporting that turns history into an actual next step, and it's installable, with sound, and works offline.
 
 <br>
 
@@ -40,7 +40,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 
 <table>
 <tr>
-<td width="20%" valign="top">
+<td width="16%" valign="top">
 
 ### 🔐 Your Account
 - Sign up / sign in / sign out
@@ -49,7 +49,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Your data, and only yours (RLS)
 
 </td>
-<td width="20%" valign="top">
+<td width="16%" valign="top">
 
 ### ⚔️ Quests
 - Daily quests by category
@@ -59,7 +59,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Duplicate-click safe — no double XP
 
 </td>
-<td width="20%" valign="top">
+<td width="16%" valign="top">
 
 ### 📈 Progress
 - Daily & weekly views, one page
@@ -67,7 +67,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Personal records & optional journal note
 
 </td>
-<td width="20%" valign="top">
+<td width="16%" valign="top">
 
 ### 🧙 Legend
 - Avatar, current title, level
@@ -75,12 +75,20 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 - Every gain traces to a real quest — nothing is grindable through empty clicks
 
 </td>
-<td width="20%" valign="top">
+<td width="16%" valign="top">
 
 ### 🏰 Realm
 - 7-tier world, keyed off lifetime XP
 - Unlock ceremony on reaching a new tier
 - Progress-to-next-tier always visible
+
+</td>
+<td width="20%" valign="top">
+
+### 🔊 Sound & Install
+- Reward sounds — quest, level-up, achievement, realm unlock
+- Global mute + volume, remembered per device
+- Installable — real app icon, works offline
 
 </td>
 </tr>
@@ -111,7 +119,7 @@ Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, ro
 React UI  →  Domain Services  →  Supabase Client  →  PostgreSQL
 ```
 
-Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`, `characterService`, `skillService`, `achievementService`, `realmService`, `rankService`, `progressService`), which keeps the backend swappable and page components small. Game-math logic (XP/level/combo/streak, stat mapping, skill mapping, title ladder, realm tiers, daily rank, progress aggregation) lives in pure, dependency-free `lib/` modules — no Supabase calls, no React — so the rules themselves are directly testable.
+Pages never query Supabase directly — they call a service (`playerService`, `questService`, `onboardingService`, `characterService`, `skillService`, `achievementService`, `realmService`, `rankService`, `progressService`), which keeps the backend swappable and page components small. Game-math logic (XP/level/combo/streak, stat mapping, skill mapping, title ladder, realm tiers, daily rank, progress aggregation) lives in pure, dependency-free `lib/` modules — no Supabase calls, no React — so the rules themselves are directly testable. Sound settings are the one deliberate exception to the Supabase-service pattern: `SoundContext`/`useSound` reads and writes `localStorage` directly, since it's a device preference, not account data.
 
 ```
 src/
@@ -162,9 +170,9 @@ npm run lint     # code quality check
 | 5 — Character System | ✅ | `v0.5.0` |
 | **6 — Realm Progression** | ✅ | `v0.6.0` |
 | **7 — Progress Intelligence** | ✅ | `v0.7.0` |
-| 8 — Audio, Atmosphere & PWA | 🔜 Next | `v0.8.0` |
-| 9+ — AI, Public Beta | ⬜ | — |
-| 8+ — Audio/PWA, AI, Public Beta | ⬜ | — |
+| **8 — Audio, Atmosphere & PWA** | ✅ | `v0.8.0` |
+| 9 — AI Companion & Smart Planning | 🔜 Next | `v0.9.0` |
+| 10 — Public Beta | ⬜ | — |
 
 *(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
@@ -226,6 +234,21 @@ npm run lint     # code quality check
 
 </details>
 
+<details>
+<summary><strong>What Phase 8 actually delivered</strong></summary>
+
+<br>
+
+- 4 reward sounds — quest-claim/XP, level-up, achievement, realm-unlock — synthesized live via the Web Audio API, no external audio files
+- Global sound mute + volume control in Settings, stored on-device rather than synced to your account (on at home, off at work — a real preference, not identity data)
+- Real PWA install: proper manifest, service worker, app icons generated from the existing brand mark, and an offline shell that survives a reload with no connection
+- Explicit-confirm update flow — never a silent forced reload while you're using the app
+- A full dependency-security audit run after adding the PWA tooling — 454 packages checked, 0 vulnerabilities, and two npm packages found actively impersonating a legitimate PWA library elsewhere in the ecosystem (correctly avoided)
+- Route-based code-splitting was tried as a performance improvement, measured to make things *worse* on this project's exact toolchain (a known, open upstream bundler issue), and reverted rather than shipped — see [`DEV_JOURNAL.md`](DEV_JOURNAL.md)
+- A real toggle-switch rendering bug found and fixed during manual testing, verified with an actual rendered screenshot rather than reasoning about the CSS alone
+
+</details>
+
 <br>
 
 ---
@@ -237,10 +260,12 @@ npm run lint     # code quality check
                       │
               PROGRESS INTELLIGENCE ✅
                       │
-           ATMOSPHERE · AI · PUBLIC BETA
+           AUDIO · PWA · OFFLINE ✅
+                      │
+                AI · PUBLIC BETA
 ```
 
-Audio/PWA polish and an optional AI companion are planned and sequenced in the project's separate planning docs. Open items needing a product decision before more code: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), and a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion. A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass.
+An AI companion and public beta are planned and sequenced in the project's separate planning docs. Open items needing a product decision before more code: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), and a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion. A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, and route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved.
 
 <br>
 

@@ -22,7 +22,8 @@
 | 5 | Character System | ✅ |
 | 6 | Realm Progression | ✅ |
 | 7 | Progress Intelligence | ✅ |
-| 8 | Audio, Atmosphere & PWA | ⬜ Next |
+| 8 | Audio, Atmosphere & PWA | ✅ |
+| 9 | AI Companion & Smart Planning | ⬜ Next |
 
 <br>
 
@@ -311,6 +312,51 @@ Real `ProgressPage.tsx` replacing the placeholder: a Daily/Weekly toggle on one 
 
 ---
 
+## Phase 8 — Audio, Atmosphere & PWA
+
+**Goal:** make the app feel polished and installable — reward sounds, a mute/volume control, and real PWA installability with an offline shell.
+
+### What shipped
+
+| Sub-phase | What shipped |
+|---|---|
+| Sound | `lib/sound.ts` — 4 reward sounds (quest-claim/XP combined, level-up, achievement, realm-unlock) synthesized live via the Web Audio API, not external audio files. `SoundContext`/`SoundProvider`/`useSound` wired into all 5 real trigger points across `QuestsPage` and `RealmPage`'s realm-unlock safety net |
+| Settings | Global effects mute + volume slider, stored in `localStorage` (not Supabase) — a deliberate choice, since this is a device preference (on at home, off at work), not account identity data |
+| PWA | Real manifest + service worker via `vite-plugin-pwa`, actual app icons generated from the existing brand SVG (not placeholders), install-prompt UI in Settings that correctly stays invisible on browsers without support (Safari/Firefox) rather than showing a broken button, explicit-confirm update flow (never a silent forced reload), online/offline indicator that only appears when actually offline |
+| Performance | Investigated, see Incident 2 below |
+
+Reward-sound design: completion is common (many times a day) so its sound is quick and small; a realm unlock is rare (potentially weeks apart) so its sound is the richest and longest. Difficulty of implementation matched difficulty of the underlying event, same principle already used for stat/skill gain scaling.
+
+### 🔴 Incident 1 — Toggle switch rendering outside its own track
+
+**Symptom:** the sound-effects toggle's inner circle visually overflowed past the track's right edge in both on/off states, confirmed via screenshots during manual testing.
+
+**Cause:** the toggle's inner circle had an explicit `top` position but no explicit `left` — relying on the browser's default static positioning for the horizontal axis. `<button>` elements carry default browser padding that was never reset to zero, so the circle's effective starting point was offset by that padding rather than starting exactly at the track's edge, and the "on" transform pushed it further right than intended.
+
+**First attempted fix was wrong** — initially misdiagnosed as a focus-ring styling issue and fixed that instead, which didn't address the actual problem. Caught this from a second, clearer screenshot and re-diagnosed properly.
+
+**Fix, verified before shipping this time:** anchored the circle explicitly (`left-0.5 top-0.5`) and zeroed the button's padding (`p-0`), removing the dependency on browser-default positioning entirely. Verified with an actual rendered screenshot (via a headless browser, using the project's real compiled CSS) showing the broken and fixed versions side by side, rather than asserting the fix was correct from code alone — the same discipline as Phase 3's "visual verification over reasoning" lesson, reapplied here after briefly forgetting it on the first attempt.
+
+### 🔴 Incident 2 — Route-based code-splitting made the bundle bigger, not smaller
+
+**Symptom:** applied `React.lazy()` per page as a performance pass. A direct A/B build on the same codebase showed the main bundle grow from 199.56 KB to 327.31 KB gzip — the opposite of the intended effect.
+
+**Cause:** a known, currently-open upstream issue in Vite 8's new Rolldown bundler (`vitejs/vite#22007`) — Rolldown's tree-shaking is measurably less aggressive once dynamic imports are introduced, so code-splitting can genuinely regress bundle size on this specific toolchain version.
+
+**Resolution:** reverted the code-splitting rather than ship something that works against "fast initial render." Documented inline in `App.tsx` for whoever revisits it once the upstream issue is resolved. The app already meets most of this section's actual goal without it — no heavy binary assets (all scenes/icons are inline SVG or small compressed PNGs), and a single ~200 KB gzip-63 KB bundle is already small for a modern SPA.
+
+### 🟢 Security note — dependency verification
+
+While adding `vite-plugin-pwa`, found two npm packages actively impersonating it (`vite-pwa-config`, `vite-config-field`, both confirmed malicious). Verified the real package's repository and maintainers before installing. After install, ran a full audit of the entire new dependency tree (454 packages) — every resolved URL traced to the legitimate public npm registry, `npm audit` reported 0 vulnerabilities, and the handful of unusually-named transitive packages (`@trickfilm400/rollup-plugin-off-main-thread`, `iceberg-js`, the `cacheable`/`qified`/`hookified` cluster) were each individually traced to legitimate, well-established roots (a Google engineer's republished tool, Supabase's own package, and ESLint's internal caching layer, respectively).
+
+Separately: a `package-lock.json` was briefly, accidentally reverted to a stale pre-install state during cleanup, then caught and corrected via a clean reinstall before anything shipped.
+
+**Result: PASS** · Release `v0.8.0`
+
+<br>
+
+---
+
 ## 🧠 Development Philosophy
 
 ```
@@ -338,8 +384,8 @@ git add . && git commit -m "..." && git push
 
 ## 🔮 Future Phases (not yet started)
 
-Audio/PWA · AI companion · Public beta
+AI companion · Public beta
 
-Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple); Realm's 6.3/6.5 (construction choices, dynamic world state); a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion — all three need a product decision before they can be built, not just more code. Also worth revisiting: whether `daily_state` should be dropped now that Phase 7 confirmed it's genuinely unused.
+Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple); Realm's 6.3/6.5 (construction choices, dynamic world state); a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion; whether `daily_state` should be dropped now that Phase 7 confirmed it's genuinely unused; route-based code-splitting, once `vitejs/vite#22007` is resolved upstream; a dedicated UI/design-token pass (the real violet/gold system from `UI_GUIDELINE.md`, still unimplemented in favor of the ad-hoc cyan/slate palette used since Phase 1).
 
 Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.
