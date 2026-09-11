@@ -21,6 +21,13 @@ import RealmUnlockOverlay from '../components/RealmUnlockOverlay'
 import RankBadge from '../components/RankBadge'
 import { getDailyRank } from '../services/rankService'
 import type { RankResult } from '../lib/rank'
+import AiSuggestionCard from '../components/AiSuggestionCard'
+import {
+  getTodaysDailyStrategy,
+  requestAiSuggestion,
+  respondToSuggestion,
+} from '../services/aiService'
+import type { AiSuggestion } from '../types/ai'
 import { calculateComboState, calculateStreakUpdate, calculateXpReward, getDisplayCombo } from '../lib/xp'
 import { getGmtDateKey, getGmtYesterdayKey } from '../lib/date'
 import type { Player } from '../types/player'
@@ -101,6 +108,15 @@ function QuestsPage() {
   // to a setState-calling function.
   const [reloadToken, setReloadToken] = useState(0)
 
+  // Phase 9: today's daily-strategy AiSuggestion, if one exists yet.
+  // Null means "not generated today" — the card shows a Generate
+  // button in that case. Loaded alongside everything else so a
+  // refresh doesn't need a second round trip.
+  const [dailyStrategy, setDailyStrategy] = useState<AiSuggestion | null>(null)
+  const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false)
+  const [isRespondingToStrategy, setIsRespondingToStrategy] = useState(false)
+  const [strategyError, setStrategyError] = useState<string | null>(null)
+
   useEffect(() => {
     if (!user) return
 
@@ -112,15 +128,25 @@ function QuestsPage() {
       setLoadError(null)
 
       try {
-        const [loadedPlayer, loadedQuests, loadedStats, loadedSkills, loadedTier, loadedRank] =
-          await Promise.all([
-            getPlayer(currentUser.id),
-            getTodaysQuests(currentUser.id),
-            getCharacterStats(currentUser.id),
-            getCharacterSkills(currentUser.id),
-            getLastAcknowledgedTier(currentUser.id),
-            getDailyRank(currentUser.id, getGmtDateKey()),
-          ])
+        const [
+          loadedPlayer,
+          loadedQuests,
+          loadedStats,
+          loadedSkills,
+          loadedTier,
+          loadedRank,
+          loadedStrategy,
+        ] = await Promise.all([
+          getPlayer(currentUser.id),
+          getTodaysQuests(currentUser.id),
+          getCharacterStats(currentUser.id),
+          getCharacterSkills(currentUser.id),
+          getLastAcknowledgedTier(currentUser.id),
+          getDailyRank(currentUser.id, getGmtDateKey()),
+          // Non-fatal to the whole page if this errors — caught
+          // separately below, same tolerance as stats/skills/tier.
+          getTodaysDailyStrategy(currentUser.id).catch(() => null),
+        ])
 
         if (cancelled) return
 
@@ -149,6 +175,7 @@ function QuestsPage() {
         setCharacterSkills(loadedSkills)
         setLastAcknowledgedTier(loadedTier)
         setTodaysRank(loadedRank)
+        setDailyStrategy(loadedStrategy)
       } catch (error) {
         if (cancelled) return
         setLoadError(
@@ -167,6 +194,40 @@ function QuestsPage() {
   }, [user, reloadToken])
 
   const retryLoad = () => setReloadToken((token) => token + 1)
+
+  async function handleGenerateDailyStrategy() {
+    setIsGeneratingStrategy(true)
+    setStrategyError(null)
+
+    try {
+      const suggestion = await requestAiSuggestion('daily_strategy')
+      setDailyStrategy(suggestion)
+    } catch (error) {
+      setStrategyError(
+        error instanceof Error ? error.message : 'Failed to generate a daily strategy.',
+      )
+    } finally {
+      setIsGeneratingStrategy(false)
+    }
+  }
+
+  async function handleRespondToDailyStrategy(status: 'approved' | 'dismissed') {
+    if (!dailyStrategy) return
+
+    setIsRespondingToStrategy(true)
+    setStrategyError(null)
+
+    try {
+      await respondToSuggestion(dailyStrategy.id, status)
+      setDailyStrategy({ ...dailyStrategy, status, respondedAt: new Date().toISOString() })
+    } catch (error) {
+      setStrategyError(
+        error instanceof Error ? error.message : 'Failed to update the suggestion.',
+      )
+    } finally {
+      setIsRespondingToStrategy(false)
+    }
+  }
 
   useEffect(() => {
     if (unlockedAchievements.length === 0) return
@@ -582,6 +643,19 @@ function QuestsPage() {
   )}
 </div>
 </div>
+
+      <div className="mb-8">
+        <AiSuggestionCard
+          title="Daily Strategy"
+          type="daily_strategy"
+          suggestion={dailyStrategy}
+          isGenerating={isGeneratingStrategy}
+          isResponding={isRespondingToStrategy}
+          errorMessage={strategyError}
+          onGenerate={handleGenerateDailyStrategy}
+          onRespond={handleRespondToDailyStrategy}
+        />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
     <div className="relative">

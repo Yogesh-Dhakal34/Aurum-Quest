@@ -12,6 +12,13 @@ import { getGmtDateKey } from '../lib/date'
 import RankBadge from '../components/RankBadge'
 import type { DailyBreakdown, WeeklyStats, WeeklyReport, PersonalRecords } from '../lib/progress'
 import type { DailyRank } from '../lib/rank'
+import AiSuggestionCard from '../components/AiSuggestionCard'
+import {
+  getRecentWeeklyReflection,
+  requestAiSuggestion,
+  respondToSuggestion,
+} from '../services/aiService'
+import type { AiSuggestion } from '../types/ai'
 
 type ViewMode = 'daily' | 'weekly'
 
@@ -35,6 +42,14 @@ function ProgressPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
+  // Phase 9: most recent weekly_reflection AiSuggestion within the
+  // last 7 days, if any. Same tolerant-null pattern as elsewhere —
+  // its absence never blocks the rest of the Progress page.
+  const [weeklyReflection, setWeeklyReflection] = useState<AiSuggestion | null>(null)
+  const [isGeneratingReflection, setIsGeneratingReflection] = useState(false)
+  const [isRespondingToReflection, setIsRespondingToReflection] = useState(false)
+  const [reflectionError, setReflectionError] = useState<string | null>(null)
+
   useEffect(() => {
     if (!user) return
 
@@ -54,10 +69,11 @@ function ProgressPage() {
           return
         }
 
-        const [todayBreakdown, weekly, personalRecords] = await Promise.all([
+        const [todayBreakdown, weekly, personalRecords, reflection] = await Promise.all([
           getDailyBreakdown(currentUser.id, getGmtDateKey()),
           getWeeklyProgress(currentUser.id),
           getPersonalRecords(currentUser.id, player.longestStreak),
+          getRecentWeeklyReflection(currentUser.id).catch(() => null),
         ])
 
         if (cancelled) return
@@ -68,6 +84,7 @@ function ProgressPage() {
         setWeekStats(weekly.stats)
         setWeekReport(weekly.report)
         setRecords(personalRecords)
+        setWeeklyReflection(reflection)
 
         const note = await getWeeklyJournalNote(currentUser.id, weekly.weekStartKey)
         if (cancelled) return
@@ -102,6 +119,40 @@ function ProgressPage() {
       // nothing the player typed is lost even if the save fails.
     } finally {
       setIsSavingNote(false)
+    }
+  }
+
+  async function handleGenerateReflection() {
+    setIsGeneratingReflection(true)
+    setReflectionError(null)
+
+    try {
+      const suggestion = await requestAiSuggestion('weekly_reflection')
+      setWeeklyReflection(suggestion)
+    } catch (error) {
+      setReflectionError(
+        error instanceof Error ? error.message : 'Failed to generate a weekly reflection.',
+      )
+    } finally {
+      setIsGeneratingReflection(false)
+    }
+  }
+
+  async function handleRespondToReflection(status: 'approved' | 'dismissed') {
+    if (!weeklyReflection) return
+
+    setIsRespondingToReflection(true)
+    setReflectionError(null)
+
+    try {
+      await respondToSuggestion(weeklyReflection.id, status)
+      setWeeklyReflection({ ...weeklyReflection, status, respondedAt: new Date().toISOString() })
+    } catch (error) {
+      setReflectionError(
+        error instanceof Error ? error.message : 'Failed to update the suggestion.',
+      )
+    } finally {
+      setIsRespondingToReflection(false)
     }
   }
 
@@ -278,6 +329,17 @@ function ProgressPage() {
               </button>
             </div>
           </div>
+
+          <AiSuggestionCard
+            title="Weekly Reflection"
+            type="weekly_reflection"
+            suggestion={weeklyReflection}
+            isGenerating={isGeneratingReflection}
+            isResponding={isRespondingToReflection}
+            errorMessage={reflectionError}
+            onGenerate={handleGenerateReflection}
+            onRespond={handleRespondToReflection}
+          />
         </div>
       )}
 
