@@ -357,7 +357,63 @@ Separately: a `package-lock.json` was briefly, accidentally reverted to a stale 
 
 ---
 
-## 🧠 Development Philosophy
+## Phase 9 — AI Companion
+
+**Goal:** use AI to reduce planning friction — a daily strategy suggestion and a weekly reflection, both requiring explicit approval, neither able to touch XP or quest state on its own.
+
+### Provider decision — Gemini instead of Anthropic
+
+`ARCHITECTURE.md` names "Anthropic API (or equivalent)." Checked before building: Anthropic's API has no ongoing free tier, only a one-time trial credit, while Google's Gemini API has a genuinely ongoing free tier on its Flash-Lite models with no billing required. Went with Gemini for a $0-budget portfolio project. `GEMINI_MODEL` is an env var/secret, not hardcoded — model names on the free tier churn faster than this code will be revisited. Landed on `gemini-3.5-flash-lite` (500 RPD free-tier limit vs. 20 RPD on the plain Flash tier — meaningful headroom if this ever gets real beta users).
+
+### What shipped
+
+| Piece | What shipped |
+|---|---|
+| Data model | `ai_suggestions` table — RLS + explicit grants, no client insert policy at all (AI output can only be written by the Edge Function's service role, so a client can never forge its own "suggestion") |
+| Edge Function | `ai-companion` — the only code path allowed to call Gemini; rate-limited to 1 daily_strategy/day and 1 weekly_reflection/7 days; reads `quest_definitions`/`quest_progress` for context, writes only to `ai_suggestions`, never to XP or quest tables |
+| Client | `aiService.ts` + `AiSuggestionCard` — Daily Strategy on `QuestsPage`, Weekly Reflection on `ProgressPage`'s weekly view; approve/dismiss, reasoning shown on demand |
+
+Stretch tier (quest suggestions requiring approval, optional goal breakdown) deliberately not built this pass — `PHASE_ASSIGNMENTS.md` itself frames Core as the release-blocking scope.
+
+### 🔴 Incident 1 — `permission denied for table ai_suggestions` (42501)
+
+**Symptom:** Edge Function's own insert failed live, during the first real smoke test.
+
+**Cause:** `create_ai_suggestions.sql`'s grant block covered `authenticated` (per the project's known post-May-2026 auto-grant gap) but never `service_role`. `service_role` carries `BYPASSRLS`, which skips row-level policies — it does not skip table-level grants, a distinction that hadn't mattered yet since every prior table was only ever written by a logged-in user, never by an Edge Function acting as `service_role`.
+
+**Fix:** `grant select, insert, update on public.ai_suggestions to service_role;`, added to the migration.
+
+### 🔴 Incident 2 — same gap, on tables that predate the grant convention entirely
+
+**Symptom:** immediately after fixing Incident 1, the same error on `quest_definitions`.
+
+**Cause:** `quest_definitions` and `quest_progress` predate the explicit-grant pattern altogether (no grant statements in their original migrations at all — `authenticated` access on them likely came from Supabase's pre-May-2026 auto-grant behavior). Nothing had ever needed `service_role` access to them until this phase.
+
+**Fix:** new migration, `grant_service_role_quest_tables.sql` — `select` grants for `service_role` on both tables. Broader lesson: the `service_role`-needs-explicit-grants rule applies retroactively to *any* existing table an Edge Function starts touching, not just newly created ones.
+
+### 🔴 Incident 3 — curl smoke test passed, browser call failed silently
+
+**Symptom:** direct `curl` calls to the deployed function worked end-to-end; the same call from the app via `supabase.functions.invoke` failed with a generic "Failed to send a request to the Edge Function."
+
+**Cause:** the function had no `OPTIONS` handler and sent no CORS headers. Browsers preflight cross-origin requests carrying custom headers (`Authorization`, `apikey`) with an `OPTIONS` request first; with nothing to answer it, the browser blocked the real request before it reached the function at all. `curl` has no such preflight step, which is exactly why it passed while the real usage path failed — a reminder that a passing server-side test doesn't stand in for testing the actual client integration.
+
+**Fix:** added a `corsHeaders` object, an early `OPTIONS` short-circuit, and applied the headers to every response.
+
+### 🟡 UX fix — dismissed suggestions stayed fully visible
+
+Found during manual UI testing (not automated): dismissing a suggestion left its full text sitting on the page indefinitely, since the 1/day rate limit means no replacement is coming until tomorrow anyway. Acknowledged suggestions correctly stay fully visible for reference; dismissed ones now collapse to a short "check back later" line instead.
+
+### 🟡 Known deviation — `ARCHITECTURE.md` §3/§7 say AI logic lives in `src/ai/`
+
+Built the actual Gemini-calling logic in `supabase/functions/ai-companion/` instead. Deno Edge Functions run in a separate runtime from the Vite/React build and can't cleanly share a `src/` tree without a bundling step not worth adding here. Planning docs live outside this repo, so noted here rather than corrected in place — update `ARCHITECTURE.md` to reflect the actual location next time it's touched.
+
+**Result: PASS** · Release `v0.9.0`
+
+<br>
+
+---
+
+
 
 ```
 DEFINE → ARCHITECT → BUILD → TEST → VERIFY → COMMIT → PUSH → EXPAND ↺
@@ -384,8 +440,8 @@ git add . && git commit -m "..." && git push
 
 ## 🔮 Future Phases (not yet started)
 
-AI companion · Public beta
+Public beta
 
-Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple); Realm's 6.3/6.5 (construction choices, dynamic world state); a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion; whether `daily_state` should be dropped now that Phase 7 confirmed it's genuinely unused; route-based code-splitting, once `vitejs/vite#22007` is resolved upstream; a dedicated UI/design-token pass (the real violet/gold system from `UI_GUIDELINE.md`, still unimplemented in favor of the ad-hoc cyan/slate palette used since Phase 1).
+Also open: a per-quest skill mapping (Phase 5.5 currently maps skills at the category level, deliberately kept simple); Realm's 6.3/6.5 (construction choices, dynamic world state); a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion; Phase 9's stretch tier (quest suggestions requiring approval, optional goal breakdown); whether `daily_state` should be dropped now that Phase 7 confirmed it's genuinely unused; route-based code-splitting, once `vitejs/vite#22007` is resolved upstream; a dedicated UI/design-token pass (the real violet/gold system from `UI_GUIDELINE.md`, still unimplemented in favor of the ad-hoc cyan/slate palette used since Phase 1); `ARCHITECTURE.md` §3/§7's `src/ai/` reference needs correcting to reflect the actual `supabase/functions/ai-companion/` location.
 
 Designed only when their requirements become concrete — tracked in the project's separate planning docs, not in this repo.

@@ -63,7 +63,14 @@ function AiSuggestionCard({
         </div>
       )}
 
-      {suggestion && (
+      {suggestion && suggestion.status === 'dismissed' && (
+        <p className="mt-3 text-sm text-slate-500">
+          You dismissed today's {TYPE_LABEL[type].toLowerCase()}. Check back{' '}
+          {type === 'daily_strategy' ? 'tomorrow' : 'next week'} for a new one.
+        </p>
+      )}
+
+      {suggestion && suggestion.status !== 'dismissed' && (
         <div className="mt-4">
           <p className="whitespace-pre-line text-slate-200">{suggestion.content}</p>
 

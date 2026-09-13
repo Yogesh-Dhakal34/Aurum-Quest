@@ -27,6 +27,17 @@ const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// Required for the browser client (supabase.functions.invoke) to be
+// able to call this at all. Without these, the browser's OPTIONS
+// preflight request gets no CORS headers back and blocks the real
+// request before it ever reaches this function -- curl/Postman work
+// fine without this since preflight is a browser-only mechanism, which
+// is why this can pass a curl smoke test and still fail from the app.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 type RequestBody = {
   type: 'daily_strategy' | 'weekly_reflection'
 }
@@ -46,7 +57,7 @@ function getGmtDateKey(date = new Date()): string {
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
   })
 }
 
@@ -118,6 +129,12 @@ Respond in plain text: a short summary, then one reflection question.`
 }
 
 Deno.serve(async (req) => {
+  // Browser preflight -- must return before any other check, with no
+  // body required, just the CORS headers.
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }

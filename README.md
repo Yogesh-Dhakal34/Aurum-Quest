@@ -6,8 +6,8 @@
 
 A **gamified personal productivity application** — real-world actions become quests, quests earn XP, XP builds a persistent character and world.
 
-[![Version](https://img.shields.io/badge/version-v0.8.0-8A2BE2?style=for-the-badge)](#-versioning)
-[![Phase](https://img.shields.io/badge/phase-8%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![Version](https://img.shields.io/badge/version-v0.9.0-8A2BE2?style=for-the-badge)](#-versioning)
+[![Phase](https://img.shields.io/badge/phase-9%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
 
@@ -21,16 +21,16 @@ A **gamified personal productivity application** — real-world actions become q
 
 | | |
 |---|---|
-| **Version** | `v0.8.0` |
-| **Phase** | 8 — Audio, Atmosphere & PWA *(complete)* |
-| **Next** | 9 — AI Companion & Smart Planning |
+| **Version** | `v0.9.0` |
+| **Phase** | 9 — AI Companion *(complete)* |
+| **Next** | 10 — Public Beta |
 
 ```
    OPEN → SIGN IN → TODAY'S QUESTS → COMPLETE QUEST →
    EARN XP, STATS, SKILLS, RANK → REVIEW YOUR WEEK → BUILD YOUR LEGEND
 ```
 
-Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement/rank engine, a persistent character with stats/skills/titles, a realm that visibly grows with lifetime progress, weekly reporting that turns history into an actual next step, and it's installable, with sound, and works offline.
+Aurum Quest is a **real multi-user app** — accounts, cloud-synced progress, row-level-secured data, a full XP/level/streak/achievement/rank engine, a persistent character with stats/skills/titles, a realm that visibly grows with lifetime progress, weekly reporting that turns history into an actual next step, an AI companion that suggests a daily strategy and a weekly reflection (never touching your XP or quests without your approval), and it's installable, with sound, and works offline.
 
 <br>
 
@@ -171,8 +171,8 @@ npm run lint     # code quality check
 | **6 — Realm Progression** | ✅ | `v0.6.0` |
 | **7 — Progress Intelligence** | ✅ | `v0.7.0` |
 | **8 — Audio, Atmosphere & PWA** | ✅ | `v0.8.0` |
-| 9 — AI Companion & Smart Planning | 🔜 Next | `v0.9.0` |
-| 10 — Public Beta | ⬜ | — |
+| **9 — AI Companion** | ✅ | `v0.9.0` |
+| 10 — Public Beta | 🔜 Next | — |
 
 *(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
@@ -249,6 +249,21 @@ npm run lint     # code quality check
 
 </details>
 
+<details>
+<summary><strong>What Phase 9 actually delivered</strong></summary>
+
+<br>
+
+- Daily Strategy — on the Quests page, an AI-generated suggestion prioritizing 1-3 unfinished quests, generated from that day's real quest list, once per day
+- Weekly Reflection — on the Progress page's weekly view, a 7-day summary plus one reflection question, once per 7 days
+- Every suggestion requires explicit approve/dismiss — the AI can never award XP, mark work complete, rewrite history, or silently create quests, enforced structurally (no client insert path into the suggestions table at all, not just a UI convention)
+- Reasoning shown on demand ("Why this suggestion?") rather than always-on, keeping the card compact
+- Server-side only — the API key never reaches the browser; calls go through a Supabase Edge Function using Google's Gemini free tier (Anthropic's API has no ongoing free tier, only a one-time trial credit — see `DEV_JOURNAL.md`)
+- 3 real incidents during live smoke testing, all found and fixed before shipping: two separate missing-`service_role`-grant permission errors, and a missing-CORS bug where a curl test passed but the actual browser call silently failed — see `DEV_JOURNAL.md` for the full writeup
+- Stretch tier (approval-gated quest suggestions, optional goal breakdown) deliberately not built this pass — treated as a genuine follow-up, not a blocker
+
+</details>
+
 <br>
 
 ---
@@ -262,10 +277,12 @@ npm run lint     # code quality check
                       │
            AUDIO · PWA · OFFLINE ✅
                       │
-                AI · PUBLIC BETA
+                AI COMPANION ✅
+                      │
+                  PUBLIC BETA
 ```
 
-An AI companion and public beta are planned and sequenced in the project's separate planning docs. Open items needing a product decision before more code: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), and a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion. A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, and route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved.
+Public beta is next, planned and sequenced in the project's separate planning docs. Open items needing a product decision before more code: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion, and Phase 9's stretch tier (approval-gated quest suggestions, optional goal breakdown). A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved, and `ARCHITECTURE.md`'s note that AI logic lives in `src/ai/` needs correcting to reflect its actual home in `supabase/functions/ai-companion/`.
 
 <br>
 

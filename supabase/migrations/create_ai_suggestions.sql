@@ -80,3 +80,12 @@ create policy "Users can respond to their own AI suggestions"
   with check (auth.uid() = user_id);
 
 grant select, update on public.ai_suggestions to authenticated;
+
+-- The Edge Function (ai-companion) authenticates as service_role, not
+-- authenticated, to read/write this table. service_role has BYPASSRLS
+-- but that only skips row-level policies -- it still needs its own
+-- table-level GRANT, which is easy to forget when every other table
+-- so far has only ever been written by a logged-in user directly.
+-- Missing this line produces "permission denied for table
+-- ai_suggestions" from the Edge Function, not an RLS-policy error.
+grant select, insert, update on public.ai_suggestions to service_role;
