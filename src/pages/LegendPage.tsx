@@ -151,7 +151,7 @@ function LegendPage() {
 
       {/* Who am I? */}
       <div className="mt-6 flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-        <AvatarDisplay avatarSex={player.avatarSex} size="lg" />
+        <AvatarDisplay avatarSex={player.avatarSex} avatarVariant={player.avatarVariant} size="lg" />
         <div>
           <p className="text-sm text-cyan-400">{getCurrentTitle(player.level).name}</p>
           <h3 className="text-2xl font-bold">{player.name}</h3>

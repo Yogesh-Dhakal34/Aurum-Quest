@@ -30,7 +30,7 @@ function PlayerCard({ player }: PlayerCardProps) {
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center gap-4">
-        <AvatarDisplay avatarSex={player.avatarSex} />
+        <AvatarDisplay avatarSex={player.avatarSex} avatarVariant={player.avatarVariant} />
 
         <div>
           <p className="text-sm text-cyan-400">{currentTitle.name}</p>

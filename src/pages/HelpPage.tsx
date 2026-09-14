@@ -62,7 +62,7 @@ function HelpPage({ onNavigate }: HelpPageProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
-    <section>
+    <section className="mx-auto max-w-2xl">
       <button
         type="button"
         onClick={() => onNavigate('settings')}

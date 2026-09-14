@@ -16,4 +16,11 @@ export type Player = {
   // right preset instead of falling back to a generic icon for every
   // user regardless of what they chose.
   avatarSex: 'male' | 'female'
+  // Phase 10: which specific design within the avatarSex bucket (see
+  // AvatarDisplay.tsx) — orthogonal to avatarSex, defaults to 1.
+  avatarVariant: number
+  // Phase 10: optional, purely informational — shown on the Profile
+  // page. null for any account that hasn't set one (which is every
+  // existing account, since onboarding never asked for this).
+  birthday: string | null
 }

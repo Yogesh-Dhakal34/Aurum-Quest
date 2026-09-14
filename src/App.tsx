@@ -9,6 +9,7 @@ import HelpPage from './pages/HelpPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import SummaryPage from './pages/SummaryPage'
+import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import OnboardingPage from './pages/OnboardingPage'
 import type { View } from './types/view'
@@ -80,6 +81,9 @@ function AuthenticatedApp() {
 
       case 'summary':
         return <SummaryPage onNavigate={setCurrentView} />
+
+      case 'profile':
+        return <ProfilePage onNavigate={setCurrentView} />
 
       case 'quests':
       default:

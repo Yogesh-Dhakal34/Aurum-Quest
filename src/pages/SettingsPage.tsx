@@ -72,7 +72,7 @@ function SettingsPage({ onNavigate }: SettingsPageProps) {
   }
 
   return (
-    <section>
+    <section className="mx-auto max-w-2xl">
       <p className="text-sm text-cyan-400">Aurum Quest</p>
 
       <h2 className="mt-1 text-3xl font-bold">
@@ -179,6 +179,17 @@ function SettingsPage({ onNavigate }: SettingsPageProps) {
           )}
         </div>
       )}
+
+      <div className="mt-4 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <p className="text-xs uppercase tracking-wide text-slate-500">Account</p>
+        <button
+          type="button"
+          onClick={() => onNavigate('profile')}
+          className="mt-2 text-left text-sm text-slate-300 hover:text-cyan-400"
+        >
+          Profile
+        </button>
+      </div>
 
       <div className="mt-4 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
         <p className="text-xs uppercase tracking-wide text-slate-500">Your Data</p>

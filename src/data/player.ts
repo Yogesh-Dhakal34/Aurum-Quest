@@ -13,4 +13,6 @@ export const player: Player = {
   comboCount: 0,
   lastComboAt: null,
   avatarSex: 'male',
+  avatarVariant: 1,
+  birthday: null,
 }

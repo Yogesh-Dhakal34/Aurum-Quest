@@ -107,7 +107,7 @@ function SummaryPage({ onNavigate }: SummaryPageProps) {
   const tier = getCurrentTier(player.currentXp)
 
   return (
-    <section>
+    <section className="mx-auto max-w-2xl">
       <div className="print:hidden">
         <button
           type="button"

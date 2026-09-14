@@ -6,7 +6,7 @@ type PrivacyPageProps = {
 
 function PrivacyPage({ onNavigate }: PrivacyPageProps) {
   return (
-    <section>
+    <section className="mx-auto max-w-2xl">
       <button
         type="button"
         onClick={() => onNavigate('settings')}
@@ -29,6 +29,7 @@ function PrivacyPage({ onNavigate }: PrivacyPageProps) {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-400">
             <li>Your email address, for sign-in</li>
             <li>Quest completions, XP, character stats/skills, streaks, ranks, and Realm progress</li>
+            <li>Your chosen avatar style and, if you set one, your birthday (optional, never shown to anyone else)</li>
             <li>An optional weekly journal note, if you choose to write one</li>
             <li>AI companion suggestions and whether you approved or dismissed them</li>
             <li>Sound and app-install preferences (kept on your device only, not synced)</li>

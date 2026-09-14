@@ -5,7 +5,7 @@ type TermsPageProps = {
 
 function TermsPage({ onNavigate, backLabel = 'Back to Settings' }: TermsPageProps) {
   return (
-    <section>
+    <section className="mx-auto max-w-2xl">
       <button
         type="button"
         onClick={onNavigate}
