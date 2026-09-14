@@ -7,7 +7,7 @@
 A **gamified personal productivity application** — real-world actions become quests, quests earn XP, XP builds a persistent character and world.
 
 [![Version](https://img.shields.io/badge/version-v0.9.0-8A2BE2?style=for-the-badge)](#-versioning)
-[![Phase](https://img.shields.io/badge/phase-9%20complete-4B0082?style=for-the-badge)](#-development-roadmap)
+[![Phase](https://img.shields.io/badge/phase-10%20in%20progress-4B0082?style=for-the-badge)](#-development-roadmap)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/built%20with-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](#-tech-stack)
 
@@ -22,8 +22,8 @@ A **gamified personal productivity application** — real-world actions become q
 | | |
 |---|---|
 | **Version** | `v0.9.0` |
-| **Phase** | 9 — AI Companion *(complete)* |
-| **Next** | 10 — Public Beta |
+| **Phase** | 10 — Public Beta *(in progress)* |
+| **Next** | Quality pass, then production deployment |
 
 ```
    OPEN → SIGN IN → TODAY'S QUESTS → COMPLETE QUEST →
@@ -172,7 +172,7 @@ npm run lint     # code quality check
 | **7 — Progress Intelligence** | ✅ | `v0.7.0` |
 | **8 — Audio, Atmosphere & PWA** | ✅ | `v0.8.0` |
 | **9 — AI Companion** | ✅ | `v0.9.0` |
-| 10 — Public Beta | 🔜 Next | — |
+| **10 — Public Beta** | 🚧 In Progress | `v1.0.0` (pending) |
 
 *(Full phase-by-phase planning docs are maintained separately, outside this repo.)*
 
@@ -264,6 +264,21 @@ npm run lint     # code quality check
 
 </details>
 
+<details>
+<summary><strong>What Phase 10 has delivered so far (in progress — not a phase close-out)</strong></summary>
+
+<br>
+
+Deployment is intentionally on hold until the app is further along, so this is a progress snapshot, not a finished phase:
+
+- Help/FAQ and Privacy pages, both readable before signing up (not just after login), with an explicit, honest disclosure that Gemini's free tier — unlike Anthropic's — permits Google to use submitted content to improve their products
+- Terms & Conditions plus a required, versioned consent checkbox on sign-up — versioned so a future policy rewrite can require fresh consent instead of quietly keeping an old "yes"
+- Full data control in Settings: JSON export, a human-readable Summary page (with Print/Save-as-PDF), atomic progress reset, and permanent account deletion
+- A new Profile page — avatar (now 4 styles, up from 2), birthday, first-joined date, level — kept separate from the existing narrative Legend page on purpose
+- Three real UI bugs found through actual use and fixed: header/sidebar scrolling away with page content, an intro animation replaying on every reload with two buttons that did the same thing, and six pages left-anchored with dead space on one side instead of centered
+
+</details>
+
 <br>
 
 ---
@@ -279,10 +294,12 @@ npm run lint     # code quality check
                       │
                 AI COMPANION ✅
                       │
-                  PUBLIC BETA
+              PUBLIC BETA 🚧 IN PROGRESS
 ```
 
-Public beta is next, planned and sequenced in the project's separate planning docs. Open items needing a product decision before more code: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion, and Phase 9's stretch tier (approval-gated quest suggestions, optional goal breakdown). A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved, and `ARCHITECTURE.md`'s note that AI logic lives in `src/ai/` needs correcting to reflect its actual home in `supabase/functions/ai-companion/`.
+Deployment is deliberately on hold — the bone structure is done, and the priority now is the quality pass (bug hunt, responsive/mobile QA, accessibility review, loading/error/empty-state audit) before a public URL exists at all. Once that and production deployment land, remaining Phase 10 work is documentation for outside readers, the portfolio package (live demo, screenshots, dev story), and the beta test itself.
+
+Open items needing a product decision beyond Phase 10: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion, and Phase 9's stretch tier (approval-gated quest suggestions, optional goal breakdown). A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved, and `ARCHITECTURE.md`'s note that AI logic lives in `src/ai/` needs correcting to reflect its actual home in `supabase/functions/ai-companion/`.
 
 <br>
 

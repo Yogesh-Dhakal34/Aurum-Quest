@@ -413,6 +413,42 @@ Built the actual Gemini-calling logic in `supabase/functions/ai-companion/` inst
 
 ---
 
+## Phase 10 — Public Beta (in progress)
+
+**Goal:** make Aurum Quest understandable and usable by someone who has never seen the project before, then actually beta-test it. Explicitly XL scope, no stretch tier — a partial public beta isn't really a beta.
+
+**Status: 🚧 In progress.** Deployment is deliberately on hold until the app is further along — "the bone structure is finished, now comes muscles, nerves, organs, skin" was the framing, and that's the right call: a rushed public URL would just showcase an unfinished product. What follows is what's shipped inside that holding pattern so far, not a phase close-out.
+
+### What shipped this pass
+
+**Product gaps (Core checklist item):**
+- Help/FAQ page and Privacy page, both reachable from Settings — Privacy explicitly discloses that Gemini's *free* tier (unlike most paid AI APIs, including Anthropic's) permits Google to use submitted content to improve their products and allows human review, since that's a real, non-obvious trade-off of the free-tier choice made in Phase 9
+- Terms & Conditions page, plus a required consent checkbox on sign-up only — versioned (`accepted_policy_version`, not just a boolean) so a future material rewrite can require fresh consent instead of silently keeping an old "yes" attached to different text. Recorded twice, deliberately redundant: once in `auth.users` metadata at the moment of signup (survives an abandoned onboarding), copied into `profiles` when onboarding completes (durable, queryable). Both Privacy and Terms are readable *before* signing up, opened inline from the auth screen itself — closed a real gap where the only copies of these pages lived behind a login wall
+- Data export (JSON, full account data, for portability), a human-readable Summary page (level, lifetime XP, streak, stats, skills, achievements, with a Print/Save-as-PDF option) added after a fair callout that nobody actually wants their stats as a JSON file, reset-progress (atomic via a `security definer` Postgres function so a 7-table wipe can't partially fail), and full account deletion (a `delete-account` Edge Function using the Admin API, since that's the only way to remove an `auth.users` row) — all reachable from a new "Your Data" / "Danger Zone" section in Settings
+
+**Profile section (explicitly requested):**
+- New Profile page: large avatar, name, title, Level, Avatar Style, First Joined (pulled straight from `auth.users.created_at`, no new backend needed), and an optional birthday field
+- Avatar options expanded from 2 to 4 (two designs per style) via a new `avatar_variant` column, orthogonal to the existing `avatar_sex` — existing users default to variant 1, so nobody's avatar silently changed on deploy
+- Deliberately kept separate from `LegendPage` (which already shows avatar/title/level in a narrative framing) to avoid duplicating it — Profile is the literal account-info page, Legend stays the "who you're becoming" one
+- "Avatar Style," not "Gender," in the UI — onboarding itself calls this step "Choose your avatar" and never frames it as identity, so Profile carries that same framing rather than quietly turning a cosmetic pick into something it was never meant to be
+
+**UI/UX fixes (user-reported, not self-discovered):**
+- Header and sidebar no longer scroll away with page content — root cause was `min-h-screen`/`min-h-[calc(...)]` with no independent scroll regions, so the whole document scrolled as one unit whenever content exceeded the viewport. Restructured into a fixed app shell (`h-dvh`, not `h-screen` — verified `dvh` is a real Tailwind utility before using it, since an unrecognized class fails silently rather than erroring) with header/sidebar pinned and only `<main>` scrolling internally, the same pattern Gmail/Slack/Notion use. Picked up `env(safe-area-inset-*)` padding for installed-iOS-PWA notch/home-indicator clearance as a free addition while already restructuring viewport sizing
+- Opening animation was showing on every reload with two buttons ("Skip" / "Enter Quest") that did the literal same thing — root cause traced to `useState(true)` with no persistence at all. Fixed to the Mobile-Legends-style behavior actually requested: shown once per app session via `sessionStorage` (survives a reload, clears when the tab/app fully closes), which also made the duplicate button moot — removed it rather than inventing a fake distinction for it to keep
+- 6 pages (`Settings`, `Help`, `Privacy`, `Terms`, `Summary`, `Profile`) were left-anchored with no centering, dumping all extra width as dead space on the right on wide screens — `QuestsPage`/`ProgressPage` already used `mx-auto max-w-*` correctly, these six didn't. Fixed to match, rather than widening individual cards (a settings page stretched edge-to-edge on an ultrawide monitor looks worse, not better — Notion/Slack/GitHub all keep settings narrow and centered regardless of viewport width)
+
+### 🟡 Gap found, not yet closed — `achievement_progress` had no migration file
+
+Discovered while scoping the reset/delete-account work: this table has existed live since Phase 4 but was never captured in a migration (previously flagged, never fixed). Reconstructed via `pg_constraint` (confirmed real FK/cascade behavior rather than assumed) and the columns `achievementService.ts` already uses successfully — `backfill_achievement_progress.sql` closes this as a `create table if not exists`, a safe no-op against the live table but real schema-reproducibility insurance if this project is ever rebuilt from scratch.
+
+### Still open for this phase
+
+Quality pass (bug hunt, responsive/mobile QA on real devices, accessibility review, loading/error/empty-state audit beyond the pages that already handle their own), production deployment (Vercel picked as the target, not yet set up — intentionally on hold), documentation for outside readers (architecture overview, screenshots, known-limitations doc), the portfolio package (live demo, LinkedIn description, dev story, lessons-learned writeup), and the beta test itself (recruit testers, define activation/completion/return metrics) — none of these can start productively before the quality pass and deployment land first.
+
+<br>
+
+---
+
 
 
 ```
