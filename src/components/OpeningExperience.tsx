@@ -53,14 +53,6 @@ function OpeningExperience({
         >
           Enter Quest
         </motion.button>
-
-        <button
-          type="button"
-          onClick={onComplete}
-          className="mt-4 block w-full text-sm text-slate-500 hover:text-white"
-        >
-          Skip
-        </button>
       </div>
     </motion.div>
   )

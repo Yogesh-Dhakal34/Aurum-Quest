@@ -23,13 +23,20 @@ function AppShell({
   onNavigate,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <UpdateAvailableBanner />
-      <header className="border-b border-slate-800">
-        <div className="flex items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold">Aurum Quest</h1>
-          <OnlineIndicator />
-        </div>
+    <div className="flex h-dvh flex-col bg-slate-950 text-white">
+      {/* Fixed top region: never scrolls, regardless of content
+          length or which device this renders on. h-dvh (not h-screen
+          or min-h-screen) on the outer container is what makes this
+          reliable on mobile -- 100vh doesn't account for the browser
+          chrome (address bar) resizing as you scroll, which used to
+          cause jumpy/clipped layouts; dvh does. */}
+      <div className="shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <UpdateAvailableBanner />
+        <header className="border-b border-slate-800">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h1 className="text-xl font-bold">Aurum Quest</h1>
+            <OnlineIndicator />
+          </div>
 
           <nav className="flex gap-1 overflow-x-auto border-t border-slate-800 px-4 py-2 md:hidden">
             {navigationItems.map((item) => (
@@ -47,10 +54,15 @@ function AppShell({
               </button>
             ))}
           </nav>
-      </header>
+        </header>
+      </div>
 
-      <div className="flex min-h-[calc(100vh-73px)]">
-        <aside className="hidden w-56 border-r border-slate-800 p-4 md:block">
+      {/* Everything below the fixed header shares the remaining
+          height. overflow-hidden here is what stops this row itself
+          from scrolling -- only its two children (aside, main) get
+          their own independent scroll regions below. */}
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-slate-800 p-4 md:block">
           <nav className="space-y-2">
             {navigationItems.map((item) => (
               <button
@@ -69,7 +81,10 @@ function AppShell({
           </nav>
         </aside>
 
-        <main className="flex-1 p-6">
+        <main
+          className="flex-1 overflow-y-auto overflow-x-hidden p-6"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
           {children}
         </main>
       </div>

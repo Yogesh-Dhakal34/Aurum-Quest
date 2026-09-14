@@ -38,7 +38,22 @@ import { getOnboardingStatus } from './services/onboardingService'
 
 function AuthenticatedApp() {
   const [currentView, setCurrentView] = useState<View>('quests')
-  const [showOpening, setShowOpening] = useState(true)
+  // Once per app session, not once ever and not on every reload -- the
+  // Mobile Legends-style behavior explicitly asked for: shown once when
+  // the app is opened, silent on any reload/navigation within that same
+  // open session, and shown again fresh the next time someone actually
+  // leaves and reopens the app. sessionStorage is what makes this exact
+  // distinction possible: it survives a page refresh (unlike plain
+  // React state) but clears the moment the tab/PWA window fully closes
+  // (unlike localStorage, which would make this "once ever").
+  const [showOpening, setShowOpening] = useState(
+    () => sessionStorage.getItem('aurumquest-opening-shown') !== 'true',
+  )
+
+  function handleOpeningComplete() {
+    sessionStorage.setItem('aurumquest-opening-shown', 'true')
+    setShowOpening(false)
+  }
 
   const renderPage = () => {
     switch (currentView) {
@@ -84,7 +99,7 @@ function AuthenticatedApp() {
       <AnimatePresence>
         {showOpening && (
           <OpeningExperience
-            onComplete={() => setShowOpening(false)}
+            onComplete={handleOpeningComplete}
           />
         )}
       </AnimatePresence>
