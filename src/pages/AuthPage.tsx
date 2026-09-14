@@ -1,8 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import PrivacyPage from './PrivacyPage'
+import TermsPage from './TermsPage'
 
 type AuthMode = 'sign-in' | 'sign-up' | 'reset-password'
+
+// Bump this if Privacy/Terms are ever materially rewritten -- see
+// add_policy_consent_columns.sql. A version string, not just a
+// boolean, so a past "yes" doesn't silently keep covering a document
+// that's since changed underneath it.
+const CURRENT_POLICY_VERSION = 'v1'
 
 function AuthPage() {
   const { signIn, signUp } = useAuth()
@@ -13,6 +21,17 @@ function AuthPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [infoMessage, setInfoMessage] = useState<string | null>(null)
+  const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false)
+  const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null)
+
+  const closeLegalView = () => setLegalView(null)
+
+  if (legalView === 'privacy') {
+    return <PrivacyPage onNavigate={closeLegalView} />
+  }
+  if (legalView === 'terms') {
+    return <TermsPage onNavigate={closeLegalView} backLabel="Back to sign up" />
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -38,7 +57,10 @@ function AuthPage() {
 
     const result =
       mode === 'sign-up'
-        ? await signUp(email, password)
+        ? await signUp(email, password, {
+            acceptedPolicyVersion: CURRENT_POLICY_VERSION,
+            acceptedPolicyAt: new Date().toISOString(),
+          })
         : await signIn(email, password)
 
     setIsSubmitting(false)
@@ -122,9 +144,38 @@ function AuthPage() {
           </p>
         )}
 
+        {mode === 'sign-up' && (
+          <label className="flex items-start gap-2 text-sm text-slate-400">
+            <input
+              type="checkbox"
+              checked={hasAcceptedPolicies}
+              onChange={(event) => setHasAcceptedPolicies(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              I agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setLegalView('terms')}
+                className="text-cyan-400 underline"
+              >
+                Terms &amp; Conditions
+              </button>{' '}
+              and{' '}
+              <button
+                type="button"
+                onClick={() => setLegalView('privacy')}
+                className="text-cyan-400 underline"
+              >
+                Privacy Policy
+              </button>
+            </span>
+          </label>
+        )}
+
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (mode === 'sign-up' && !hasAcceptedPolicies)}
           className="w-full rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
         >
           {isSubmitting

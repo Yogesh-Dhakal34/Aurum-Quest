@@ -85,6 +85,16 @@ export async function completeOnboarding(
   userId: string,
   input: OnboardingInput,
 ): Promise<void> {
+  // Consent was captured on the auth record itself at signup time (see
+  // AuthContext.signUp) so it's never lost even if onboarding is
+  // abandoned partway. Copying it here too puts it in the public
+  // schema for durable querying, per Supabase's own guidance against
+  // relying on auth metadata as the sole source of truth for data you
+  // actually need to query later.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { error: profileError } = await supabase.from('profiles').upsert({
     id: userId,
     name: input.name,
@@ -92,6 +102,8 @@ export async function completeOnboarding(
     timezone: input.timezone,
     focus_categories: input.focusCategories,
     onboarding_completed_at: new Date().toISOString(),
+    accepted_policy_version: user?.user_metadata?.accepted_policy_version ?? null,
+    accepted_policy_at: user?.user_metadata?.accepted_policy_at ?? null,
   })
 
   if (profileError) throw toReadableError(profileError)

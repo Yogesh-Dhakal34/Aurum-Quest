@@ -5,6 +5,10 @@ import ProgressPage from './pages/ProgressPage'
 import QuestsPage from './pages/QuestsPage'
 import RealmPage from './pages/RealmPage'
 import SettingsPage from './pages/SettingsPage'
+import HelpPage from './pages/HelpPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
+import SummaryPage from './pages/SummaryPage'
 import AuthPage from './pages/AuthPage'
 import OnboardingPage from './pages/OnboardingPage'
 import type { View } from './types/view'
@@ -48,7 +52,19 @@ function AuthenticatedApp() {
         return <RealmPage />
 
       case 'settings':
-        return <SettingsPage />
+        return <SettingsPage onNavigate={setCurrentView} />
+
+      case 'help':
+        return <HelpPage onNavigate={setCurrentView} />
+
+      case 'privacy':
+        return <PrivacyPage onNavigate={setCurrentView} />
+
+      case 'terms':
+        return <TermsPage onNavigate={() => setCurrentView('settings')} />
+
+      case 'summary':
+        return <SummaryPage onNavigate={setCurrentView} />
 
       case 'quests':
       default:

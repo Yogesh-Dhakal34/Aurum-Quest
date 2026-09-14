@@ -1,11 +1,75 @@
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useSound } from '../hooks/useSound'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
+import { exportUserData, downloadExport, resetMyProgress, deleteMyAccount } from '../services/dataService'
+import type { View } from '../types/view'
 
-function SettingsPage() {
+type SettingsPageProps = {
+  onNavigate: (view: View) => void
+}
+
+function SettingsPage({ onNavigate }: SettingsPageProps) {
   const { user, signOut } = useAuth()
   const { settings, setEffectsEnabled, setEffectsVolume } = useSound()
   const { isInstallable, isInstalled, promptInstall } = useInstallPrompt()
+
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  const [resetConfirmText, setResetConfirmText] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [resetDone, setResetDone] = useState(false)
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function handleExport() {
+    if (!user) return
+    setIsExporting(true)
+    setExportError(null)
+
+    try {
+      const data = await exportUserData(user.id)
+      downloadExport(data)
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Export failed.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleReset() {
+    if (resetConfirmText !== 'RESET') return
+    setIsResetting(true)
+    setResetError(null)
+
+    try {
+      await resetMyProgress()
+      setResetDone(true)
+      setResetConfirmText('')
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : 'Reset failed.')
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== 'DELETE') return
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await deleteMyAccount()
+      await signOut()
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Account deletion failed.')
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <section>
@@ -115,6 +179,115 @@ function SettingsPage() {
           )}
         </div>
       )}
+
+      <div className="mt-4 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <p className="text-xs uppercase tracking-wide text-slate-500">Your Data</p>
+
+        <div className="mt-3">
+          <p className="text-sm text-slate-400">
+            View a readable summary of your stats, or download everything as a JSON file.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onNavigate('summary')}
+              className="rounded-lg bg-cyan-400/10 px-4 py-1.5 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-400/20"
+            >
+              View Summary
+            </button>
+            <button
+              type="button"
+              disabled={isExporting}
+              onClick={() => void handleExport()}
+              className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isExporting ? 'Exporting...' : 'Export as JSON'}
+            </button>
+          </div>
+          {exportError && <p className="mt-2 text-sm text-red-400">{exportError}</p>}
+        </div>
+
+        <div className="mt-5 border-t border-slate-800 pt-4">
+          <p className="text-sm text-slate-400">
+            Wipe your quests, XP, stats, and streaks back to a fresh start. Your login and
+            username stay the same.
+          </p>
+          {resetDone ? (
+            <p className="mt-2 text-sm text-cyan-400">Progress reset. Refresh to see it reflected everywhere.</p>
+          ) : (
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="text"
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="Type RESET to confirm"
+                className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-600"
+              />
+              <button
+                type="button"
+                disabled={resetConfirmText !== 'RESET' || isResetting}
+                onClick={() => void handleReset()}
+                className="rounded-lg border border-amber-500/50 px-4 py-1.5 text-sm font-medium text-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isResetting ? 'Resetting...' : 'Reset Progress'}
+              </button>
+            </div>
+          )}
+          {resetError && <p className="mt-2 text-sm text-red-400">{resetError}</p>}
+        </div>
+      </div>
+
+      <div className="mt-4 max-w-md rounded-xl border border-red-900/50 bg-red-950/20 p-4">
+        <p className="text-xs uppercase tracking-wide text-red-400">Danger Zone</p>
+        <p className="mt-2 text-sm text-slate-400">
+          Permanently deletes your account and everything tied to it. This cannot be undone.
+        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="text"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-600"
+          />
+          <button
+            type="button"
+            disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+            onClick={() => void handleDeleteAccount()}
+            className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
+          </button>
+        </div>
+        {deleteError && <p className="mt-2 text-sm text-red-400">{deleteError}</p>}
+      </div>
+
+      <div className="mt-4 max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <p className="text-xs uppercase tracking-wide text-slate-500">Support</p>
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate('help')}
+            className="text-left text-sm text-slate-300 hover:text-cyan-400"
+          >
+            Help &amp; FAQ
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('privacy')}
+            className="text-left text-sm text-slate-300 hover:text-cyan-400"
+          >
+            Privacy
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('terms')}
+            className="text-left text-sm text-slate-300 hover:text-cyan-400"
+          >
+            Terms &amp; Conditions
+          </button>
+        </div>
+      </div>
     </section>
   )
 }

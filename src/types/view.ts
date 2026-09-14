@@ -4,3 +4,7 @@ export type View =
   | 'progress'
   | 'realm'
   | 'settings'
+  | 'help'
+  | 'privacy'
+  | 'terms'
+  | 'summary'

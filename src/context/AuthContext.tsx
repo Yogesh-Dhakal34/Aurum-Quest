@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { AuthContext, type AuthContextValue } from './auth-context'
+import { AuthContext, type AuthContextValue, type PolicyConsent } from './auth-context'
 
 /**
  * Owns the Supabase auth session for the whole app.
@@ -38,8 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ email, password })
+  async function signUp(email: string, password: string, consent: PolicyConsent) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          accepted_policy_version: consent.acceptedPolicyVersion,
+          accepted_policy_at: consent.acceptedPolicyAt,
+        },
+      },
+    })
     return { error: error?.message ?? null }
   }
 
