@@ -1,4 +1,5 @@
-import type { Quest } from '../types/quest'
+import type { Quest, QuestRarity } from '../types/quest'
+import { RARITY_XP_RANGES } from '../types/quest'
 
 type QuestCardProps = {
   quest: Quest
@@ -6,7 +7,15 @@ type QuestCardProps = {
   isPending: boolean
 }
 
+const RARITY_STYLES: Record<QuestRarity, string> = {
+  Common: 'bg-emerald-500/15 text-emerald-400',
+  Rare: 'bg-blue-500/15 text-blue-400',
+  Epic: 'bg-violet-500/15 text-violet-400',
+  Legendary: 'bg-orange-500/15 text-orange-400',
+}
+
 function QuestCard({ quest, onComplete, isPending }: QuestCardProps) {  const progressPercentage = (quest.progress / quest.target) * 100
+  const range = RARITY_XP_RANGES[quest.rarity]
 
   return (
     <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -16,9 +25,14 @@ function QuestCard({ quest, onComplete, isPending }: QuestCardProps) {  const pr
             {quest.category}
           </p>
 
-          <h3 className="mt-1 text-xl font-semibold">
-            {quest.title}
-          </h3>
+          <div className="mt-1 flex items-center gap-2">
+            <h3 className="text-xl font-semibold">
+              {quest.title}
+            </h3>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${RARITY_STYLES[quest.rarity]}`}>
+              {quest.rarity}
+            </span>
+          </div>
 
           <p className="mt-2 text-sm text-slate-400">
             {quest.description}
@@ -37,8 +51,11 @@ function QuestCard({ quest, onComplete, isPending }: QuestCardProps) {  const pr
             {quest.unit !== 'completion' && quest.unit}
           </span>
 
-          <span className="text-cyan-400">
-            +{quest.xpReward} XP
+          <span className="text-right">
+            <span className="text-cyan-400">+{quest.xpReward} XP</span>
+            <span className="ml-1.5 text-xs text-slate-500">
+              ({range.min}–{range.max} XP)
+            </span>
           </span>
         </div>
 

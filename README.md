@@ -276,6 +276,7 @@ Deployment is intentionally on hold until the app is further along, so this is a
 - Full data control in Settings: JSON export, a human-readable Summary page (with Print/Save-as-PDF), atomic progress reset, and permanent account deletion
 - A new Profile page — avatar (now 4 styles, up from 2), birthday, first-joined date, level — kept separate from the existing narrative Legend page on purpose
 - Three real UI bugs found through actual use and fixed: header/sidebar scrolling away with page content, an intro animation replaying on every reload with two buttons that did the same thing, and six pages left-anchored with dead space on one side instead of centered
+- Revived the rarity system specified back in Phase 1 but never actually built (Common/Rare/Epic/Legendary, decoupled from difficulty) — now paused mid-expansion in favor of a bigger quest/reward system redesign under active research (see `DEV_JOURNAL.md`)
 
 </details>
 
@@ -298,6 +299,8 @@ Deployment is intentionally on hold until the app is further along, so this is a
 ```
 
 Deployment is deliberately on hold — the bone structure is done, and the priority now is the quality pass (bug hunt, responsive/mobile QA, accessibility review, loading/error/empty-state audit) before a public URL exists at all. Once that and production deployment land, remaining Phase 10 work is documentation for outside readers, the portfolio package (live demo, screenshots, dev story), and the beta test itself.
+
+A bigger shift is also under active research: moving from today's shared, hand-authored quest catalog toward quests generated uniquely per user, scaffolded by a small fixed taxonomy of quest types — direction not yet settled, deliberately paused rather than built on a foundation about to change.
 
 Open items needing a product decision beyond Phase 10: a more granular per-quest skill mapping (beyond Phase 5.5's category-level version), Realm's construction choices (6.3) and dynamic world state (6.5), a full next-week planning/goal-tracking flow beyond Phase 7's computed suggestion, and Phase 9's stretch tier (approval-gated quest suggestions, optional goal breakdown). A dedicated UI/design-token pass (implementing `UI_GUIDELINE.md`'s actual violet/gold system, currently unimplemented in favor of the ad-hoc palette used since Phase 1) is also on the radar, timing not yet decided. Also worth a look: `daily_state` was found dead/unused during Phase 7 and may be worth dropping in a cleanup pass, route-based code-splitting can be revisited once a known upstream Vite/Rolldown bundler issue is resolved, and `ARCHITECTURE.md`'s note that AI logic lives in `src/ai/` needs correcting to reflect its actual home in `supabase/functions/ai-companion/`.
 

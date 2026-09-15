@@ -9,6 +9,7 @@ type QuestDefinitionRow = {
   description: string
   category: Quest['category']
   difficulty: Quest['difficulty']
+  rarity: Quest['rarity']
   xp_reward: number
   target: number
   unit: Quest['unit']
@@ -38,7 +39,7 @@ export async function getTodaysQuests(userId: string): Promise<Quest[]> {
     await Promise.all([
       supabase
         .from('quest_definitions')
-        .select('id, title, description, category, difficulty, xp_reward, target, unit')
+        .select('id, title, description, category, difficulty, rarity, xp_reward, target, unit')
         .eq('is_active', true),
       supabase
         .from('quest_progress')
@@ -63,6 +64,7 @@ export async function getTodaysQuests(userId: string): Promise<Quest[]> {
       description: definition.description,
       category: definition.category,
       difficulty: definition.difficulty,
+      rarity: definition.rarity,
       xpReward: definition.xp_reward,
       target: definition.target,
       unit: definition.unit,
