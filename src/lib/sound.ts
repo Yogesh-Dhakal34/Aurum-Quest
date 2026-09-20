@@ -158,3 +158,22 @@ export function playRealmUnlockSound(volume: number): void {
     volume,
   )
 }
+
+/**
+ * Entry transition — a rising four-note arpeggio (not a chord, unlike
+ * realm unlock) meant to read as "arrival" rather than "reward": this
+ * fires once per app session on tapping Enter Quest, not tied to any
+ * in-game achievement, so it's deliberately a different character from
+ * every other sound here rather than reusing the reward family.
+ */
+export function playEnterGameSound(volume: number): void {
+  playTones(
+    [
+      { frequency: 261.63, startOffset: 0, duration: 0.18, type: 'triangle' }, // C4
+      { frequency: 329.63, startOffset: 0.1, duration: 0.18, type: 'triangle' }, // E4
+      { frequency: 392, startOffset: 0.2, duration: 0.18, type: 'triangle' }, // G4
+      { frequency: 523.25, startOffset: 0.3, duration: 0.45, type: 'triangle' }, // C5
+    ],
+    volume,
+  )
+}

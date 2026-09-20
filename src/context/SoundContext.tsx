@@ -5,6 +5,7 @@ import {
   playLevelUpSound,
   playAchievementSound,
   playRealmUnlockSound,
+  playEnterGameSound,
 } from '../lib/sound'
 import {
   SoundContext,
@@ -80,6 +81,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
           break
         case 'realmUnlock':
           playRealmUnlockSound(volume)
+          break
+        case 'enterGame':
+          playEnterGameSound(volume)
           break
       }
     },

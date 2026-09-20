@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-export type SoundEvent = 'questClaim' | 'levelUp' | 'achievement' | 'realmUnlock'
+export type SoundEvent = 'questClaim' | 'levelUp' | 'achievement' | 'realmUnlock' | 'enterGame'
 
 export type SoundSettings = {
   effectsEnabled: boolean

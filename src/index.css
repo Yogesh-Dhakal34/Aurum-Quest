@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+/*
+ * UI_GUIDELINE.md §1-3: "Premium dark fantasy" identity, specified
+ * since Phase 1, never actually implemented -- the app has run on
+ * ad-hoc cyan/slate colors instead. This block is the real foundation,
+ * defined once here so it's ready to adopt incrementally across the
+ * rest of the app, not a one-off hack for a single component.
+ *
+ * Deliberately named `brand-*` rather than overriding Tailwind's own
+ * color scale (e.g. `violet-*`) -- keeps this additive: every existing
+ * page using slate/cyan today keeps compiling and rendering exactly as
+ * it already does, nothing breaks by this file existing.
+ */
+@theme {
+  --color-brand-navy: #0a0a18;
+  --color-brand-violet: #7c3aed;
+  --color-brand-violet-dim: #4c1d95;
+  --color-brand-gold: #d4af37;
+  --color-brand-gold-bright: #f5d76e;
+
+  --font-display: "Cinzel", serif;
+  --font-hud: "Orbitron", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
