@@ -12,6 +12,25 @@ type AuthMode = 'sign-in' | 'sign-up' | 'reset-password'
 // that's since changed underneath it.
 const CURRENT_POLICY_VERSION = 'v1'
 
+const RATE_LIMIT_MESSAGE = 'Too many emails sent. Try again in an hour.'
+
+// Supabase returns "email rate limit exceeded" (code over_email_send_rate_limit,
+// HTTP 429) when the project's hourly email cap is hit.
+function friendlyAuthError(
+  message: string,
+  code?: string,
+  status?: number,
+): string {
+  if (
+    code === 'over_email_send_rate_limit' ||
+    status === 429 ||
+    /rate limit/i.test(message)
+  ) {
+    return RATE_LIMIT_MESSAGE
+  }
+  return message
+}
+
 function AuthPage() {
   const { signIn, signUp } = useAuth()
 
@@ -42,12 +61,19 @@ function AuthPage() {
     if (mode === 'reset-password') {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
+        { redirectTo: window.location.origin },
       )
 
       setIsSubmitting(false)
 
       if (resetError) {
-        setError(resetError.message)
+        setError(
+          friendlyAuthError(
+            resetError.message,
+            resetError.code,
+            resetError.status,
+          ),
+        )
         return
       }
 
@@ -66,7 +92,7 @@ function AuthPage() {
     setIsSubmitting(false)
 
     if (result.error) {
-      setError(result.error)
+      setError(friendlyAuthError(result.error))
       return
     }
 

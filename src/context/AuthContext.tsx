@@ -15,6 +15,7 @@ import { AuthContext, type AuthContextValue, type PolicyConsent } from './auth-c
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRecovering, setIsRecovering] = useState(false)
 
   useEffect(() => {
     // On mount: check for an existing session (e.g. after a page refresh
@@ -28,7 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // sign-out, and token refresh happening anywhere in the app.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Supabase signs the user in when they open a reset email link and
+      // fires PASSWORD_RECOVERY. Without this flag the app treats them as
+      // a normal login and skips the new-password step.
+      if (event === 'PASSWORD_RECOVERY') setIsRecovering(true)
       setSession(nextSession)
       setIsLoading(false)
     })
@@ -68,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     user: session?.user ?? null,
     isLoading,
+    isRecovering,
+    finishRecovery: () => setIsRecovering(false),
     signUp,
     signIn,
     signOut,

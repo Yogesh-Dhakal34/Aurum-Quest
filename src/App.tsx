@@ -11,6 +11,7 @@ import TermsPage from './pages/TermsPage'
 import SummaryPage from './pages/SummaryPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import OnboardingPage from './pages/OnboardingPage'
 import type { View } from './types/view'
 import { AnimatePresence } from 'motion/react'
@@ -176,7 +177,7 @@ function OnboardingGate() {
 }
 
 function AuthGate() {
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isRecovering } = useAuth()
 
   if (isLoading) {
     return (
@@ -188,6 +189,10 @@ function AuthGate() {
 
   if (!session) {
     return <AuthPage />
+  }
+
+  if (isRecovering) {
+    return <ResetPasswordPage />
   }
 
   return <OnboardingGate />
